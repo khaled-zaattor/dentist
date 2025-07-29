@@ -1,0 +1,7 @@
+clinic.db
+__pycache__/
+backend/vendor/
+backend/node_modules/
+backend/.env
+frontend/node_modules/
+frontend/dist/
