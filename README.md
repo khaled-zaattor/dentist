@@ -1,8 +1,9 @@
 # Dentist Management App
 
 This project contains a minimal Laravel backend and a React + Tailwind
-frontend for managing a dental clinic. The backend exposes a simple API
-to list patients while the frontend demonstrates fetching that data.
+frontend for managing a dental clinic. The backend exposes APIs to
+manage patients and doctors, while the frontend provides simple pages
+for CRUD operations.
 
 ## Backend (Laravel)
 
@@ -25,12 +26,14 @@ to list patients while the frontend demonstrates fetching that data.
 
 ## Frontend (React + Tailwind)
 
-The frontend is a very small example that loads React and Tailwind
-from CDNs. Open `frontend/index.html` in a browser while the backend is
-running to see the list of patients returned by the API.
+The frontend loads React and Tailwind from CDNs. After starting the
+backend server, open the following files in a browser:
+
+- `frontend/patients.html` — manage patients
+- `frontend/doctors.html` — manage doctors
 
 ## Notes
 
 This repo contains only a minimal skeleton to demonstrate the stack.
-More models, controllers and views can be added to fully manage doctors,
+More models, controllers and views can be added to fully manage
 appointments, treatments and billing.
