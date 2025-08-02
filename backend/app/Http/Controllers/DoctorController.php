@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Patient;
+use App\Models\Doctor;
 use Illuminate\Http\Request;
 
-class PatientController extends Controller
+class DoctorController extends Controller
 {
     public function index()
     {
         return response()
-            ->json(Patient::all())
+            ->json(Doctor::all())
             ->header('Access-Control-Allow-Origin', '*');
     }
 
@@ -21,37 +21,37 @@ class PatientController extends Controller
             'phone' => 'nullable|string|max:255',
         ]);
 
-        $patient = Patient::create($data);
+        $doctor = Doctor::create($data);
 
         return response()
-            ->json($patient, 201)
+            ->json($doctor, 201)
             ->header('Access-Control-Allow-Origin', '*');
     }
 
-    public function show(Patient $patient)
+    public function show(Doctor $doctor)
     {
         return response()
-            ->json($patient)
+            ->json($doctor)
             ->header('Access-Control-Allow-Origin', '*');
     }
 
-    public function update(Request $request, Patient $patient)
+    public function update(Request $request, Doctor $doctor)
     {
         $data = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'phone' => 'nullable|string|max:255',
         ]);
 
-        $patient->update($data);
+        $doctor->update($data);
 
         return response()
-            ->json($patient)
+            ->json($doctor)
             ->header('Access-Control-Allow-Origin', '*');
     }
 
-    public function destroy(Patient $patient)
+    public function destroy(Doctor $doctor)
     {
-        $patient->delete();
+        $doctor->delete();
 
         return response()
             ->noContent()
