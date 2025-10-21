@@ -5,13 +5,15 @@ import { ar } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { UserPlus, UserCheck, UserX, Clock, Check, ChevronsUpDown } from "lucide-react";
+import { UserPlus, UserCheck, UserX, Clock, Check, ChevronsUpDown, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 interface Patient {
   id: string;
@@ -54,6 +56,10 @@ export default function WaitingListManagement() {
   const [searchResults, setSearchResults] = useState<Patient[]>([]);
   const [showOnlyTodayAppointments, setShowOnlyTodayAppointments] = useState(false);
   const [todayAppointmentPatients, setTodayAppointmentPatients] = useState<Patient[]>([]);
+  const [editingPatient, setEditingPatient] = useState<WaitingPatient | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editArrivalTime, setEditArrivalTime] = useState("");
+  const [editExamTime, setEditExamTime] = useState("");
 
   useEffect(() => {
     fetchPatients();
@@ -261,6 +267,45 @@ export default function WaitingListManagement() {
     toast.success("تم إزالة المريض من لائحة الانتظار");
   };
 
+  const openEditDialog = (patient: WaitingPatient) => {
+    setEditingPatient(patient);
+    setEditArrivalTime(format(new Date(patient.clinic_arrival_time), "yyyy-MM-dd'T'HH:mm"));
+    setEditExamTime(patient.examination_room_entry_time 
+      ? format(new Date(patient.examination_room_entry_time), "yyyy-MM-dd'T'HH:mm")
+      : "");
+    setEditDialogOpen(true);
+  };
+
+  const saveEditedTimes = async () => {
+    if (!editingPatient || !editArrivalTime) {
+      toast.error("الرجاء إدخال وقت الوصول");
+      return;
+    }
+
+    const updateData: any = {
+      clinic_arrival_time: new Date(editArrivalTime).toISOString(),
+    };
+
+    if (editExamTime) {
+      updateData.examination_room_entry_time = new Date(editExamTime).toISOString();
+    }
+
+    const { error } = await supabase
+      .from('waiting_list')
+      .update(updateData)
+      .eq('id', editingPatient.id);
+
+    if (error) {
+      toast.error("حدث خطأ أثناء التحديث");
+      console.error('Error updating times:', error);
+      return;
+    }
+
+    toast.success("تم تحديث الأوقات بنجاح");
+    setEditDialogOpen(false);
+    setEditingPatient(null);
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'waiting':
@@ -435,6 +480,15 @@ export default function WaitingListManagement() {
                     )}
                     
                     <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditDialog(patient)}
+                    >
+                      <Edit className="ml-2 h-4 w-4" />
+                      تعديل
+                    </Button>
+                    
+                    <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => removeFromWaitingList(patient.id)}
@@ -477,6 +531,42 @@ export default function WaitingListManagement() {
           </CardContent>
         </Card>
       )}
+      
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تعديل أوقات المريض</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="arrival-time">وقت الوصول للعيادة</Label>
+              <Input
+                id="arrival-time"
+                type="datetime-local"
+                value={editArrivalTime}
+                onChange={(e) => setEditArrivalTime(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="exam-time">وقت الدخول لغرفة الفحص (اختياري)</Label>
+              <Input
+                id="exam-time"
+                type="datetime-local"
+                value={editExamTime}
+                onChange={(e) => setEditExamTime(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              إلغاء
+            </Button>
+            <Button onClick={saveEditedTimes}>
+              حفظ التعديلات
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
