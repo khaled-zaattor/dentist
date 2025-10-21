@@ -14,6 +14,8 @@ import Appointments from "./pages/Appointments";
 import Treatments from "./pages/Treatments";
 import ActivityLogs from "./pages/ActivityLogs";
 import AdminDashboard from "./pages/AdminDashboard";
+import WaitingListDisplay from "./pages/WaitingListDisplay";
+import WaitingListManagement from "./pages/WaitingListManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +37,8 @@ const App = () => (
             <Route path="/treatments" element={<Layout><Treatments /></Layout>} />
             <Route path="/activity-logs" element={<Layout><ActivityLogs /></Layout>} />
             <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
+            <Route path="/waiting-list-display" element={<WaitingListDisplay />} />
+            <Route path="/waiting-list-management" element={<Layout><WaitingListManagement /></Layout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH -ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

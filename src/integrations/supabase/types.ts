@@ -542,6 +542,54 @@ export type Database = {
         }
         Relationships: []
       }
+      waiting_list: {
+        Row: {
+          appointment_id: string | null
+          clinic_arrival_time: string
+          created_at: string
+          examination_room_entry_time: string | null
+          id: string
+          patient_id: string
+          status: Database["public"]["Enums"]["waiting_list_status"]
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          clinic_arrival_time?: string
+          created_at?: string
+          examination_room_entry_time?: string | null
+          id?: string
+          patient_id: string
+          status?: Database["public"]["Enums"]["waiting_list_status"]
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          clinic_arrival_time?: string
+          created_at?: string
+          examination_room_entry_time?: string | null
+          id?: string
+          patient_id?: string
+          status?: Database["public"]["Enums"]["waiting_list_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiting_list_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiting_list_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -563,6 +611,7 @@ export type Database = {
       app_role: "super_admin" | "doctor" | "dentist_assistant" | "receptionist"
       appointment_status: "Scheduled" | "Completed" | "Cancelled"
       tooth_association_type: "not_related" | "single_tooth" | "multiple_teeth"
+      waiting_list_status: "waiting" | "in_examination" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -693,6 +742,7 @@ export const Constants = {
       app_role: ["super_admin", "doctor", "dentist_assistant", "receptionist"],
       appointment_status: ["Scheduled", "Completed", "Cancelled"],
       tooth_association_type: ["not_related", "single_tooth", "multiple_teeth"],
+      waiting_list_status: ["waiting", "in_examination", "completed"],
     },
   },
 } as const

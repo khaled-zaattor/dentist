@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, Calendar, FileText, Stethoscope, UserCheck, Settings, FileSpreadsheet } from "lucide-react";
+import { Users, Calendar, FileText, Stethoscope, UserCheck, Settings, FileSpreadsheet, ListChecks, MonitorPlay } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,6 +22,8 @@ const navItems = [
   { path: "/doctors", label: "الأطباء", icon: UserCheck, adminOnly: false },
   { path: "/appointments", label: "المواعيد", icon: Calendar, adminOnly: false },
   { path: "/treatments", label: "العلاجات", icon: FileText, adminOnly: false },
+  { path: "/waiting-list-management", label: "إدارة لائحة الانتظار", icon: ListChecks, adminOnly: false },
+  { path: "/waiting-list-display", label: "عرض لائحة الانتظار", icon: MonitorPlay, adminOnly: false },
   { path: "/activity-logs", label: "سجل النشاطات", icon: FileSpreadsheet, adminOnly: true },
   { path: "/admin", label: "إدارة النظام", icon: Settings, adminOnly: true },
 ];
