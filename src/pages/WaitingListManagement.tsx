@@ -246,7 +246,7 @@ export default function WaitingListManagement() {
               <PopoverContent className="w-[500px] p-0">
                 <Command>
                   <CommandInput placeholder="ابحث عن مريض بالاسم أو رقم الهاتف..." />
-                  <CommandList>
+                  <CommandList className="max-h-[400px]">
                     <CommandEmpty>لم يتم العثور على مرضى</CommandEmpty>
                     <CommandGroup>
                       {patients.map((patient) => (
