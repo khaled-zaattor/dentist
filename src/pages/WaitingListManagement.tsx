@@ -5,7 +5,7 @@ import { ar } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { UserPlus, UserCheck, UserX, Clock, Check, ChevronsUpDown, Edit } from "lucide-react";
+import { UserPlus, UserCheck, UserX, Clock, Check, ChevronsUpDown, Edit, FileSpreadsheet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -14,6 +14,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 interface Patient {
   id: string;
@@ -328,6 +330,49 @@ export default function WaitingListManagement() {
     setEditingPatient(null);
   };
 
+  const exportToExcelAndDelete = async () => {
+    if (completedList.length === 0) {
+      toast.info("لا توجد زيارات منتهية للتصدير");
+      return;
+    }
+
+    // Prepare data for Excel
+    const excelData = completedList.map(patient => ({
+      'اسم المريض': patient.patients.full_name,
+      'وقت الوصول': format(new Date(patient.clinic_arrival_time), "dd/MM/yyyy HH:mm", { locale: ar }),
+      'وقت الدخول للفحص': patient.examination_room_entry_time 
+        ? format(new Date(patient.examination_room_entry_time), "dd/MM/yyyy HH:mm", { locale: ar })
+        : 'لم يدخل للفحص'
+    }));
+
+    // Create worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'الزيارات');
+
+    // Generate Excel file
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
+    // Save file with today's date
+    const fileName = `زيارات-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+    saveAs(data, fileName);
+
+    // Delete completed records
+    const { error } = await supabase
+      .from('waiting_list')
+      .delete()
+      .in('id', completedList.map(p => p.id));
+
+    if (error) {
+      toast.error("حدث خطأ أثناء حذف السجلات");
+      console.error('Error deleting records:', error);
+      return;
+    }
+
+    toast.success(`تم تصدير وحذف ${completedList.length} زيارة منتهية`);
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'waiting':
@@ -538,8 +583,16 @@ export default function WaitingListManagement() {
 
       {completedList.length > 0 && (
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>الزيارات المنتهية اليوم</CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={exportToExcelAndDelete}
+            >
+              <FileSpreadsheet className="ml-2 h-4 w-4" />
+              تصدير وحذف ({completedList.length})
+            </Button>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
