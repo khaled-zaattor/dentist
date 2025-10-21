@@ -53,6 +53,7 @@ export default function WaitingListManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Patient[]>([]);
   const [showOnlyTodayAppointments, setShowOnlyTodayAppointments] = useState(false);
+  const [todayAppointmentPatients, setTodayAppointmentPatients] = useState<Patient[]>([]);
 
   useEffect(() => {
     fetchPatients();
@@ -115,6 +116,33 @@ export default function WaitingListManagement() {
 
     return () => clearTimeout(handler);
   }, [searchQuery, open]);
+
+  // Fetch today's appointment patients when filter is active and no search
+  useEffect(() => {
+    const fetchTodayPatients = async () => {
+      if (!showOnlyTodayAppointments || searchQuery.trim()) {
+        setTodayAppointmentPatients([]);
+        return;
+      }
+      const ids = Array.from(new Set(todayAppointments.map((a) => a.patient_id)));
+      if (ids.length === 0) {
+        setTodayAppointmentPatients([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('patients')
+        .select('id, full_name, phone_number')
+        .in('id', ids)
+        .order('full_name', { ascending: true });
+      if (error) {
+        console.error('Error fetching today patients:', error);
+        setTodayAppointmentPatients([]);
+        return;
+      }
+      setTodayAppointmentPatients(data || []);
+    };
+    fetchTodayPatients();
+  }, [showOnlyTodayAppointments, searchQuery, todayAppointments]);
 
   const fetchTodayAppointments = async () => {
     const today = new Date();
@@ -252,9 +280,7 @@ export default function WaitingListManagement() {
   
   // When filter is active and no search query, show only today's appointment patients
   if (showOnlyTodayAppointments && !searchQuery.trim()) {
-    displayPatients = todayAppointments
-      .map(apt => patients.find(p => p.id === apt.patient_id))
-      .filter((p): p is Patient => p !== undefined);
+    displayPatients = todayAppointmentPatients;
   } else if (showOnlyTodayAppointments && searchQuery.trim()) {
     // When both filter and search are active, filter search results
     const todayAppointmentPatientIds = todayAppointments.map(apt => apt.patient_id);
