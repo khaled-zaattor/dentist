@@ -35,7 +35,7 @@ const App = () => (
             <Route path="/treatments" element={<Layout><Treatments /></Layout>} />
             <Route path="/activity-logs" element={<Layout><ActivityLogs /></Layout>} />
             <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH -ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthWrapper>
