@@ -250,9 +250,15 @@ export default function WaitingListManagement() {
   // Filter patients based on search and today's appointments filter
   let displayPatients = searchQuery.trim() ? searchResults : patients;
   
-  if (showOnlyTodayAppointments) {
+  // When filter is active and no search query, show only today's appointment patients
+  if (showOnlyTodayAppointments && !searchQuery.trim()) {
+    displayPatients = todayAppointments
+      .map(apt => patients.find(p => p.id === apt.patient_id))
+      .filter((p): p is Patient => p !== undefined);
+  } else if (showOnlyTodayAppointments && searchQuery.trim()) {
+    // When both filter and search are active, filter search results
     const todayAppointmentPatientIds = todayAppointments.map(apt => apt.patient_id);
-    displayPatients = displayPatients.filter(patient => 
+    displayPatients = searchResults.filter(patient => 
       todayAppointmentPatientIds.includes(patient.id)
     );
   }
