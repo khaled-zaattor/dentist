@@ -49,6 +49,7 @@ export default function WaitingListManagement() {
   const [selectedPatient, setSelectedPatient] = useState<string>("");
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Patient[]>([]);
 
   useEffect(() => {
     fetchPatients();
@@ -86,8 +87,31 @@ export default function WaitingListManagement() {
       return;
     }
 
-    setPatients(data || []);
+  setPatients(data || []);
   };
+
+  // Server-side search across ALL patients (avoids 1000-row default limit)
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!open) return; // only search when combobox is open
+    if (!q) {
+      setSearchResults([]);
+      return;
+    }
+
+    const handler = setTimeout(async () => {
+      const like = `%${q}%`;
+      const { data, error } = await supabase
+        .from('patients')
+        .select('id, full_name, phone_number')
+        .or(`full_name.ilike.${like},phone_number.ilike.${like}`)
+        .order('full_name', { ascending: true })
+        .limit(200);
+      if (!error) setSearchResults(data || []);
+    }, 250);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery, open]);
 
   const fetchTodayAppointments = async () => {
     const today = new Date();
@@ -220,11 +244,7 @@ export default function WaitingListManagement() {
   const activeWaitingList = waitingList.filter(p => p.status !== 'completed');
   const completedList = waitingList.filter(p => p.status === 'completed');
 
-  const filteredPatients = patients.filter(patient => {
-    const query = searchQuery.toLowerCase().trim();
-    return patient.full_name.toLowerCase().includes(query) || 
-           patient.phone_number.toLowerCase().includes(query);
-  });
+  const displayPatients = searchQuery.trim() ? searchResults : patients;
 
   return (
     <div className="container mx-auto p-6 space-y-6" dir="rtl">
@@ -250,7 +270,7 @@ export default function WaitingListManagement() {
                   <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[500px] p-0">
+              <PopoverContent className="w-[500px] p-0 bg-background z-50">
                 <Command shouldFilter={false}>
                   <CommandInput 
                     placeholder="ابحث عن مريض بالاسم أو رقم الهاتف..." 
@@ -260,7 +280,7 @@ export default function WaitingListManagement() {
                   <CommandList className="max-h-[400px]">
                     <CommandEmpty>لم يتم العثور على مرضى</CommandEmpty>
                     <CommandGroup>
-                      {filteredPatients.map((patient) => (
+                      {displayPatients.map((patient) => (
                         <CommandItem
                           key={patient.id}
                           value={patient.id}
