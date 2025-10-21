@@ -965,7 +965,8 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                     setTreatmentRecord({
                       ...treatmentRecord,
                       sub_treatment_id: value,
-                      actual_cost: selectedSubTreatment?.estimated_cost?.toString().replace(/,/g, '') || ""
+                      actual_cost: selectedSubTreatment?.estimated_cost?.toString().replace(/,/g, '') || "",
+                      tooth_numbers: [] // Reset tooth selection when changing sub-treatment
                     });
                   }}
                 >
@@ -982,30 +983,47 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <div className="lg:col-span-2">
-                <Label>رقم السن</Label>
-                <div className="border rounded-lg p-3 bg-muted/30">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-center text-xs font-medium flex-1">مخطط الأسنان - النظام العالمي</div>
-                  </div>
+            {(() => {
+              const selectedSubTreatment = subTreatments?.find(st => st.id === treatmentRecord.sub_treatment_id);
+              const toothAssociation = selectedSubTreatment?.tooth_association || "not_related";
+              const isToothSelectionEnabled = toothAssociation !== "not_related";
+              const isSingleToothOnly = toothAssociation === "single_tooth";
 
-                  {/* اختيار نوع الأسنان */}
-                  <div className="mb-3">
-                    <RadioGroup value={teethType} onValueChange={(value: "adult" | "child") => {
-                      setTeethType(value);
-                      setTreatmentRecord({ ...treatmentRecord, tooth_numbers: [] });
-                    }} className="flex gap-4 justify-center">
-                      <div className="flex items-center space-x-2 space-x-reverse">
-                        <RadioGroupItem value="adult" id="adult" />
-                        <Label htmlFor="adult" className="cursor-pointer">أسنان البالغين</Label>
+              return (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="lg:col-span-2">
+                    <Label>رقم السن</Label>
+                    {!isToothSelectionEnabled ? (
+                      <div className="border rounded-lg p-3 bg-muted/30 text-center text-sm text-muted-foreground">
+                        هذا العلاج غير مرتبط بأسنان محددة
                       </div>
-                      <div className="flex items-center space-x-2 space-x-reverse">
-                        <RadioGroupItem value="child" id="child" />
-                        <Label htmlFor="child" className="cursor-pointer">أسنان الأطفال</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
+                    ) : (
+                      <div className="border rounded-lg p-3 bg-muted/30">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="text-center text-xs font-medium flex-1">
+                            مخطط الأسنان - النظام العالمي
+                            {isSingleToothOnly && (
+                              <span className="block text-xs text-primary mt-1">يُسمح باختيار سن واحد فقط</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* اختيار نوع الأسنان */}
+                        <div className="mb-3">
+                          <RadioGroup value={teethType} onValueChange={(value: "adult" | "child") => {
+                            setTeethType(value);
+                            setTreatmentRecord({ ...treatmentRecord, tooth_numbers: [] });
+                          }} className="flex gap-4 justify-center">
+                            <div className="flex items-center space-x-2 space-x-reverse">
+                              <RadioGroupItem value="adult" id="adult" />
+                              <Label htmlFor="adult" className="cursor-pointer">أسنان البالغين</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 space-x-reverse">
+                              <RadioGroupItem value="child" id="child" />
+                              <Label htmlFor="child" className="cursor-pointer">أسنان الأطفال</Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
 
                   {teethType === "adult" ? (
                     <>
@@ -1019,10 +1037,16 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                               type="button"
                               onClick={() => {
                                 const toothStr = toothNum.toString();
-                                const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
-                                  ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
-                                  : [...treatmentRecord.tooth_numbers, toothStr];
-                                setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                if (isSingleToothOnly) {
+                                  // For single tooth, replace selection
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: [toothStr] });
+                                } else {
+                                  // For multiple teeth, toggle selection
+                                  const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
+                                    ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
+                                    : [...treatmentRecord.tooth_numbers, toothStr];
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                }
                               }}
                               className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
@@ -1040,10 +1064,14 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                               type="button"
                               onClick={() => {
                                 const toothStr = toothNum.toString();
-                                const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
-                                  ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
-                                  : [...treatmentRecord.tooth_numbers, toothStr];
-                                setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                if (isSingleToothOnly) {
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: [toothStr] });
+                                } else {
+                                  const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
+                                    ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
+                                    : [...treatmentRecord.tooth_numbers, toothStr];
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                }
                               }}
                               className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
@@ -1065,10 +1093,14 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                               type="button"
                               onClick={() => {
                                 const toothStr = toothNum.toString();
-                                const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
-                                  ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
-                                  : [...treatmentRecord.tooth_numbers, toothStr];
-                                setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                if (isSingleToothOnly) {
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: [toothStr] });
+                                } else {
+                                  const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
+                                    ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
+                                    : [...treatmentRecord.tooth_numbers, toothStr];
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                }
                               }}
                               className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
@@ -1086,10 +1118,14 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                               type="button"
                               onClick={() => {
                                 const toothStr = toothNum.toString();
-                                const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
-                                  ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
-                                  : [...treatmentRecord.tooth_numbers, toothStr];
-                                setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                if (isSingleToothOnly) {
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: [toothStr] });
+                                } else {
+                                  const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
+                                    ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
+                                    : [...treatmentRecord.tooth_numbers, toothStr];
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                }
                               }}
                               className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
@@ -1114,10 +1150,14 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                               type="button"
                               onClick={() => {
                                 const toothStr = toothNum.toString();
-                                const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
-                                  ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
-                                  : [...treatmentRecord.tooth_numbers, toothStr];
-                                setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                if (isSingleToothOnly) {
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: [toothStr] });
+                                } else {
+                                  const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
+                                    ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
+                                    : [...treatmentRecord.tooth_numbers, toothStr];
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                }
                               }}
                               className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
@@ -1135,10 +1175,14 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                               type="button"
                               onClick={() => {
                                 const toothStr = toothNum.toString();
-                                const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
-                                  ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
-                                  : [...treatmentRecord.tooth_numbers, toothStr];
-                                setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                if (isSingleToothOnly) {
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: [toothStr] });
+                                } else {
+                                  const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
+                                    ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
+                                    : [...treatmentRecord.tooth_numbers, toothStr];
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                }
                               }}
                               className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
@@ -1160,10 +1204,14 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                               type="button"
                               onClick={() => {
                                 const toothStr = toothNum.toString();
-                                const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
-                                  ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
-                                  : [...treatmentRecord.tooth_numbers, toothStr];
-                                setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                if (isSingleToothOnly) {
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: [toothStr] });
+                                } else {
+                                  const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
+                                    ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
+                                    : [...treatmentRecord.tooth_numbers, toothStr];
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                }
                               }}
                               className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
@@ -1181,10 +1229,14 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                               type="button"
                               onClick={() => {
                                 const toothStr = toothNum.toString();
-                                const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
-                                  ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
-                                  : [...treatmentRecord.tooth_numbers, toothStr];
-                                setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                if (isSingleToothOnly) {
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: [toothStr] });
+                                } else {
+                                  const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
+                                    ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
+                                    : [...treatmentRecord.tooth_numbers, toothStr];
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                }
                               }}
                               className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
@@ -1204,41 +1256,44 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                       الأسنان المحددة: {treatmentRecord.tooth_numbers.sort((a, b) => parseInt(a) - parseInt(b)).join(", ")}
                     </div>
                   )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="actual_cost">التكلفة الحقيقية</Label>
+                       <Input
+                        id="actual_cost"
+                        type="text"
+                        value={treatmentRecord.actual_cost ? formatNumberWithCommas(treatmentRecord.actual_cost) : ''}
+                        onChange={(e) => {
+                          const rawValue = removeCommas(e.target.value);
+                          setTreatmentRecord({ ...treatmentRecord, actual_cost: rawValue });
+                        }}
+                        placeholder="أدخل التكلفة الحقيقية"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="payment_amount">مبلغ الدفعة (اختياري)</Label>
+                      <Input
+                        id="payment_amount"
+                        type="text"
+                        value={treatmentRecord.payment_amount ? formatNumberWithCommas(treatmentRecord.payment_amount) : ''}
+                        onChange={(e) => {
+                          const rawValue = removeCommas(e.target.value);
+                          setTreatmentRecord({ ...treatmentRecord, payment_amount: rawValue });
+                        }}
+                        placeholder="أدخل مبلغ الدفعة إن وجد"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        اترك فارغاً إذا لم يتم الدفع
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="actual_cost">التكلفة الحقيقية</Label>
-                  <Input
-                    id="actual_cost"
-                    type="text"
-                    value={treatmentRecord.actual_cost ? formatNumberWithCommas(treatmentRecord.actual_cost) : ''}
-                    onChange={(e) => {
-                      const rawValue = removeCommas(e.target.value);
-                      setTreatmentRecord({ ...treatmentRecord, actual_cost: rawValue });
-                    }}
-                    placeholder="أدخل التكلفة الحقيقية"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="payment_amount">مبلغ الدفعة (اختياري)</Label>
-                  <Input
-                    id="payment_amount"
-                    type="text"
-                    value={treatmentRecord.payment_amount ? formatNumberWithCommas(treatmentRecord.payment_amount) : ''}
-                    onChange={(e) => {
-                      const rawValue = removeCommas(e.target.value);
-                      setTreatmentRecord({ ...treatmentRecord, payment_amount: rawValue });
-                    }}
-                    placeholder="أدخل مبلغ الدفعة إن وجد"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    اترك فارغاً إذا لم يتم الدفع
-                  </p>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Notes Section */}
             <div>
