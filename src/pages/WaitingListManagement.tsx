@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface Patient {
   id: string;
@@ -50,6 +52,7 @@ export default function WaitingListManagement() {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Patient[]>([]);
+  const [showOnlyTodayAppointments, setShowOnlyTodayAppointments] = useState(false);
 
   useEffect(() => {
     fetchPatients();
@@ -244,7 +247,15 @@ export default function WaitingListManagement() {
   const activeWaitingList = waitingList.filter(p => p.status !== 'completed');
   const completedList = waitingList.filter(p => p.status === 'completed');
 
-  const displayPatients = searchQuery.trim() ? searchResults : patients;
+  // Filter patients based on search and today's appointments filter
+  let displayPatients = searchQuery.trim() ? searchResults : patients;
+  
+  if (showOnlyTodayAppointments) {
+    const todayAppointmentPatientIds = todayAppointments.map(apt => apt.patient_id);
+    displayPatients = displayPatients.filter(patient => 
+      todayAppointmentPatientIds.includes(patient.id)
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6" dir="rtl">
@@ -255,6 +266,16 @@ export default function WaitingListManagement() {
           <CardTitle>إضافة مريض إلى لائحة الانتظار</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="flex items-center gap-3 mb-4">
+            <Switch
+              id="today-appointments"
+              checked={showOnlyTodayAppointments}
+              onCheckedChange={setShowOnlyTodayAppointments}
+            />
+            <Label htmlFor="today-appointments" className="cursor-pointer">
+              إظهار المرضى الذين لديهم مواعيد اليوم فقط ({todayAppointments.length})
+            </Label>
+          </div>
           <div className="flex gap-4">
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
@@ -280,25 +301,35 @@ export default function WaitingListManagement() {
                   <CommandList className="max-h-[400px]">
                     <CommandEmpty>لم يتم العثور على مرضى</CommandEmpty>
                     <CommandGroup>
-                      {displayPatients.map((patient) => (
-                        <CommandItem
-                          key={patient.id}
-                          value={patient.id}
-                          onSelect={() => {
-                            setSelectedPatient(patient.id);
-                            setSearchQuery("");
-                            setOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "ml-2 h-4 w-4",
-                              selectedPatient === patient.id ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {patient.full_name} - {patient.phone_number}
-                        </CommandItem>
-                      ))}
+                      {displayPatients.map((patient) => {
+                        const appointment = todayAppointments.find(apt => apt.patient_id === patient.id);
+                        return (
+                          <CommandItem
+                            key={patient.id}
+                            value={patient.id}
+                            onSelect={() => {
+                              setSelectedPatient(patient.id);
+                              setSearchQuery("");
+                              setOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "ml-2 h-4 w-4",
+                                selectedPatient === patient.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <div className="flex-1">
+                              <div>{patient.full_name} - {patient.phone_number}</div>
+                              {appointment && (
+                                <div className="text-xs text-muted-foreground">
+                                  موعد اليوم: {format(new Date(appointment.scheduled_at), "p", { locale: ar })}
+                                </div>
+                              )}
+                            </div>
+                          </CommandItem>
+                        );
+                      })}
                     </CommandGroup>
                   </CommandList>
                 </Command>
