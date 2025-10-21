@@ -252,6 +252,28 @@ export default function WaitingListManagement() {
     toast.success("تم إنهاء الزيارة");
   };
 
+  const completeAllInExamination = async () => {
+    const patientsInExam = activeWaitingList.filter(p => p.status === 'in_examination');
+    
+    if (patientsInExam.length === 0) {
+      toast.info("لا يوجد مرضى في الفحص حالياً");
+      return;
+    }
+
+    const { error } = await supabase
+      .from('waiting_list')
+      .update({ status: 'completed' })
+      .in('id', patientsInExam.map(p => p.id));
+
+    if (error) {
+      toast.error("حدث خطأ");
+      console.error('Error completing visits:', error);
+      return;
+    }
+
+    toast.success(`تم إنهاء زيارة ${patientsInExam.length} مريض`);
+  };
+
   const removeFromWaitingList = async (id: string) => {
     const { error } = await supabase
       .from('waiting_list')
@@ -407,8 +429,18 @@ export default function WaitingListManagement() {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>المرضى الحاليون</CardTitle>
+          {activeWaitingList.filter(p => p.status === 'in_examination').length > 0 && (
+            <Button 
+              variant="secondary" 
+              size="sm"
+              onClick={completeAllInExamination}
+            >
+              <Clock className="ml-2 h-4 w-4" />
+              إنهاء زيارة الجميع ({activeWaitingList.filter(p => p.status === 'in_examination').length})
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
