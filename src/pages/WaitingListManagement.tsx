@@ -5,15 +5,11 @@ import { ar } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { UserPlus, UserCheck, UserX, Clock } from "lucide-react";
+import { UserPlus, UserCheck, UserX, Clock, Check, ChevronsUpDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 interface Patient {
   id: string;
@@ -51,6 +47,7 @@ export default function WaitingListManagement() {
   const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
   const [waitingList, setWaitingList] = useState<WaitingPatient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<string>("");
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     fetchPatients();
@@ -232,18 +229,49 @@ export default function WaitingListManagement() {
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
-            <Select value={selectedPatient} onValueChange={setSelectedPatient}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="اختر مريض" />
-              </SelectTrigger>
-              <SelectContent>
-                {patients.map((patient) => (
-                  <SelectItem key={patient.id} value={patient.id}>
-                    {patient.full_name} - {patient.phone_number}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="flex-1 justify-between"
+                >
+                  {selectedPatient
+                    ? patients.find((patient) => patient.id === selectedPatient)?.full_name
+                    : "ابحث عن مريض..."}
+                  <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[500px] p-0">
+                <Command>
+                  <CommandInput placeholder="ابحث عن مريض بالاسم أو رقم الهاتف..." />
+                  <CommandList>
+                    <CommandEmpty>لم يتم العثور على مرضى</CommandEmpty>
+                    <CommandGroup>
+                      {patients.map((patient) => (
+                        <CommandItem
+                          key={patient.id}
+                          value={`${patient.full_name} ${patient.phone_number}`}
+                          onSelect={() => {
+                            setSelectedPatient(patient.id);
+                            setOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "ml-2 h-4 w-4",
+                              selectedPatient === patient.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {patient.full_name} - {patient.phone_number}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
             <Button onClick={addPatientToWaitingList}>
               <UserPlus className="ml-2 h-4 w-4" />
               إضافة
