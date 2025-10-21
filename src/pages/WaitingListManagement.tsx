@@ -48,6 +48,7 @@ export default function WaitingListManagement() {
   const [waitingList, setWaitingList] = useState<WaitingPatient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<string>("");
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchPatients();
@@ -219,6 +220,12 @@ export default function WaitingListManagement() {
   const activeWaitingList = waitingList.filter(p => p.status !== 'completed');
   const completedList = waitingList.filter(p => p.status === 'completed');
 
+  const filteredPatients = patients.filter(patient => {
+    const query = searchQuery.toLowerCase().trim();
+    return patient.full_name.toLowerCase().includes(query) || 
+           patient.phone_number.toLowerCase().includes(query);
+  });
+
   return (
     <div className="container mx-auto p-6 space-y-6" dir="rtl">
       <h1 className="text-3xl font-bold">إدارة لائحة الانتظار</h1>
@@ -244,17 +251,22 @@ export default function WaitingListManagement() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[500px] p-0">
-                <Command>
-                  <CommandInput placeholder="ابحث عن مريض بالاسم أو رقم الهاتف..." />
+                <Command shouldFilter={false}>
+                  <CommandInput 
+                    placeholder="ابحث عن مريض بالاسم أو رقم الهاتف..." 
+                    value={searchQuery}
+                    onValueChange={setSearchQuery}
+                  />
                   <CommandList className="max-h-[400px]">
                     <CommandEmpty>لم يتم العثور على مرضى</CommandEmpty>
                     <CommandGroup>
-                      {patients.map((patient) => (
+                      {filteredPatients.map((patient) => (
                         <CommandItem
                           key={patient.id}
-                          value={`${patient.full_name} ${patient.phone_number}`}
+                          value={patient.id}
                           onSelect={() => {
                             setSelectedPatient(patient.id);
+                            setSearchQuery("");
                             setOpen(false);
                           }}
                         >
