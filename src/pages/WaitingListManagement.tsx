@@ -79,7 +79,7 @@ export default function WaitingListManagement() {
     const { data, error } = await supabase
       .from('patients')
       .select('id, full_name, phone_number')
-      .order('full_name');
+      .order('full_name', { ascending: true });
 
     if (error) {
       console.error('Error fetching patients:', error);
