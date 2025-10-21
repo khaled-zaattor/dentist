@@ -183,19 +183,19 @@ export default function WaitingListManagement() {
     setWaitingList(data || []);
   };
 
-  const addPatientToWaitingList = async () => {
-    if (!selectedPatient) {
+  const addPatientToWaitingList = async (patientId: string) => {
+    if (!patientId) {
       toast.error("الرجاء اختيار مريض");
       return;
     }
 
     // Find if patient has appointment today
-    const appointment = todayAppointments.find(apt => apt.patient_id === selectedPatient);
+    const appointment = todayAppointments.find(apt => apt.patient_id === patientId);
 
     const { error } = await supabase
       .from('waiting_list')
       .insert({
-        patient_id: selectedPatient,
+        patient_id: patientId,
         appointment_id: appointment?.id || null,
         clinic_arrival_time: new Date().toISOString(),
         status: 'waiting'
@@ -209,6 +209,8 @@ export default function WaitingListManagement() {
 
     toast.success("تم إضافة المريض إلى لائحة الانتظار");
     setSelectedPatient("");
+    setSearchQuery("");
+    setOpen(false);
   };
 
   const moveToExamination = async (id: string) => {
@@ -308,70 +310,54 @@ export default function WaitingListManagement() {
               إظهار المرضى الذين لديهم مواعيد اليوم فقط ({todayAppointments.length})
             </Label>
           </div>
-          <div className="flex gap-4">
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={open}
-                  className="flex-1 justify-between"
-                >
-                  {selectedPatient
-                    ? patients.find((patient) => patient.id === selectedPatient)?.full_name
-                    : "ابحث عن مريض..."}
-                  <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[500px] p-0 bg-background z-50">
-                <Command shouldFilter={false}>
-                  <CommandInput 
-                    placeholder="ابحث عن مريض بالاسم أو رقم الهاتف..." 
-                    value={searchQuery}
-                    onValueChange={setSearchQuery}
-                  />
-                  <CommandList className="max-h-[400px]">
-                    <CommandEmpty>لم يتم العثور على مرضى</CommandEmpty>
-                    <CommandGroup>
-                      {displayPatients.map((patient) => {
-                        const appointment = todayAppointments.find(apt => apt.patient_id === patient.id);
-                        return (
-                          <CommandItem
-                            key={patient.id}
-                            value={patient.id}
-                            onSelect={() => {
-                              setSelectedPatient(patient.id);
-                              setSearchQuery("");
-                              setOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "ml-2 h-4 w-4",
-                                selectedPatient === patient.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <div className="flex-1">
-                              <div>{patient.full_name} - {patient.phone_number}</div>
-                              {appointment && (
-                                <div className="text-xs text-muted-foreground">
-                                  موعد اليوم: {format(new Date(appointment.scheduled_at), "p", { locale: ar })}
-                                </div>
-                              )}
-                            </div>
-                          </CommandItem>
-                        );
-                      })}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-            <Button onClick={addPatientToWaitingList}>
-              <UserPlus className="ml-2 h-4 w-4" />
-              إضافة
-            </Button>
-          </div>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="w-full justify-between"
+              >
+                ابحث عن مريض وأضفه إلى لائحة الانتظار...
+                <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[500px] p-0 bg-background z-50">
+              <Command shouldFilter={false}>
+                <CommandInput 
+                  placeholder="ابحث عن مريض بالاسم أو رقم الهاتف..." 
+                  value={searchQuery}
+                  onValueChange={setSearchQuery}
+                />
+                <CommandList className="max-h-[400px]">
+                  <CommandEmpty>لم يتم العثور على مرضى</CommandEmpty>
+                  <CommandGroup>
+                    {displayPatients.map((patient) => {
+                      const appointment = todayAppointments.find(apt => apt.patient_id === patient.id);
+                      return (
+                        <CommandItem
+                          key={patient.id}
+                          value={patient.id}
+                          onSelect={() => addPatientToWaitingList(patient.id)}
+                          className="cursor-pointer"
+                        >
+                          <UserPlus className="ml-2 h-4 w-4" />
+                          <div className="flex-1">
+                            <div>{patient.full_name} - {patient.phone_number}</div>
+                            {appointment && (
+                              <div className="text-xs text-muted-foreground">
+                                موعد اليوم: {format(new Date(appointment.scheduled_at), "p", { locale: ar })}
+                              </div>
+                            )}
+                          </div>
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </CardContent>
       </Card>
 
