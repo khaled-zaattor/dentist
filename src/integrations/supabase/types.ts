@@ -393,7 +393,36 @@ export type Database = {
           treatment_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_treatment_plans_appointment"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_treatment_plans_patient"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_treatment_plans_sub_treatment"
+            columns: ["sub_treatment_id"]
+            isOneToOne: false
+            referencedRelation: "sub_treatments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_treatment_plans_treatment"
+            columns: ["treatment_id"]
+            isOneToOne: false
+            referencedRelation: "treatments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       treatment_records: {
         Row: {
