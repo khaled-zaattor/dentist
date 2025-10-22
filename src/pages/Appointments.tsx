@@ -12,7 +12,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Plus, FileText, Filter, X, MessageCircle, CheckSquare, MoreHorizontal, Check, ChevronsUpDown, Pencil, Trash2, ClipboardCheck } from "lucide-react";
+import { Plus, FileText, Filter, X, MessageCircle, CheckSquare, MoreHorizontal, Check, ChevronsUpDown, Pencil, Trash2, ClipboardCheck, Download, Upload } from "lucide-react";
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +50,7 @@ export default function Appointments() {
   const [filterDoctor, setFilterDoctor] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [filterPatientName, setFilterPatientName] = useState("");
 
   const [newAppointment, setNewAppointment] = useState({
     patient_id: "",
@@ -81,7 +84,7 @@ export default function Appointments() {
   }, [isRecordDialogOpen, selectedAppointment]);
 
   const { data: appointments, isLoading } = useQuery({
-    queryKey: ["appointments", filterDoctor, filterDate, filterStatus],
+    queryKey: ["appointments", filterDoctor, filterDate, filterStatus, filterPatientName],
     queryFn: async () => {
       let query = supabase
         .from("appointments")
@@ -115,6 +118,14 @@ export default function Appointments() {
 
       const { data, error } = await query.order("scheduled_at", { ascending: false });
       if (error) throw error;
+      
+      // Apply patient name filter (client-side since we're filtering on joined data)
+      if (filterPatientName && data) {
+        return data.filter(apt => 
+          apt.patients?.full_name?.toLowerCase().includes(filterPatientName.toLowerCase())
+        );
+      }
+      
       return data;
     },
   });
@@ -692,6 +703,129 @@ export default function Appointments() {
     }
   };
 
+  const handleExportToExcel = () => {
+    if (!appointments || appointments.length === 0) {
+      toast({ 
+        title: "لا توجد بيانات", 
+        description: "لا توجد مواعيد لتصديرها",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const exportData = appointments.map(apt => ({
+      'اسم المريض': apt.patients?.full_name || '',
+      'رقم الهاتف': apt.patients?.phone_number || '',
+      'الطبيب': apt.doctors?.full_name || '',
+      'التخصص': apt.doctors?.specialty || '',
+      'التاريخ': new Date(apt.scheduled_at).toLocaleDateString('ar-EG'),
+      'الوقت': new Date(apt.scheduled_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+      'الحالة': apt.status,
+      'ملاحظات': apt.notes || ''
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'المواعيد');
+    
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(data, `appointments_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    toast({ 
+      title: "نجح", 
+      description: "تم تصدير المواعيد إلى Excel بنجاح" 
+    });
+  };
+
+  const handleImportFromExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = new Uint8Array(event.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        if (jsonData.length === 0) {
+          toast({ 
+            title: "خطأ", 
+            description: "الملف فارغ",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Process and validate imported data
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const row of jsonData as any[]) {
+          try {
+            // Find patient by name
+            const patient = patients?.find(p => p.full_name === row['اسم المريض']);
+            if (!patient) {
+              errorCount++;
+              continue;
+            }
+
+            // Find doctor by name
+            const doctor = doctors?.find(d => d.full_name === row['الطبيب']);
+            if (!doctor) {
+              errorCount++;
+              continue;
+            }
+
+            // Parse date and time
+            const dateStr = row['التاريخ'];
+            const timeStr = row['الوقت'];
+            if (!dateStr || !timeStr) {
+              errorCount++;
+              continue;
+            }
+
+            // Create appointment
+            const { error } = await supabase.from("appointments").insert({
+              patient_id: patient.id,
+              doctor_id: doctor.id,
+              scheduled_at: new Date(`${dateStr} ${timeStr}`).toISOString(),
+              notes: row['ملاحظات'] || '',
+              status: row['الحالة'] || 'Scheduled'
+            });
+
+            if (error) {
+              errorCount++;
+            } else {
+              successCount++;
+            }
+          } catch (err) {
+            errorCount++;
+          }
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["appointments"] });
+        
+        toast({ 
+          title: "اكتمل الاستيراد", 
+          description: `تم استيراد ${successCount} موعد بنجاح. فشل: ${errorCount}`,
+        });
+      } catch (error) {
+        toast({ 
+          title: "خطأ", 
+          description: "فشل استيراد الملف",
+          variant: "destructive"
+        });
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+    e.target.value = ''; // Reset input
+  };
+
   // Validation schema for treatment notes
   const treatmentNotesSchema = z.object({
     notes: z.string().max(2000, { message: "الملاحظات يجب أن لا تتجاوز 2000 حرف" })
@@ -885,8 +1019,35 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle>قائمة المواعيد</CardTitle>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportToExcel}
+              title="تصدير إلى Excel"
+            >
+              <Download className="h-4 w-4 ml-2" />
+              تصدير
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => document.getElementById('excel-import')?.click()}
+              title="استيراد من Excel"
+            >
+              <Upload className="h-4 w-4 ml-2" />
+              استيراد
+            </Button>
+            <input
+              id="excel-import"
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleImportFromExcel}
+              className="hidden"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -907,7 +1068,18 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                       />
                     </div>
                   </TableHead>
-                  <TableHead>المريض</TableHead>
+                  <TableHead>
+                    <div className="space-y-2">
+                      <span>المريض</span>
+                      <Input
+                        type="text"
+                        value={filterPatientName}
+                        onChange={(e) => setFilterPatientName(e.target.value)}
+                        placeholder="ابحث عن مريض..."
+                        className="text-xs"
+                      />
+                    </div>
+                  </TableHead>
                   <TableHead className="hidden md:table-cell">
                     <div className="space-y-2">
                       <span>الطبيب</span>
@@ -945,6 +1117,25 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                   <TableHead className="hidden lg:table-cell">ملاحظات</TableHead>
                   <TableHead className="hidden lg:table-cell">الإجراءات</TableHead>
                 </TableRow>
+                {(filterDate || filterDoctor !== "" && filterDoctor !== "all" || filterStatus !== "" && filterStatus !== "all" || filterPatientName) && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setFilterDate("");
+                          setFilterDoctor("");
+                          setFilterStatus("");
+                          setFilterPatientName("");
+                        }}
+                      >
+                        <X className="h-3 w-3 ml-1" />
+                        مسح جميع الفلاتر
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableHeader>
               <TableBody>
                 {appointments?.map((appointment) => (
