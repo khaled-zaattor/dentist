@@ -51,6 +51,7 @@ export default function Appointments() {
   const [filterDate, setFilterDate] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterPatientName, setFilterPatientName] = useState("");
+  const [debouncedPatientName, setDebouncedPatientName] = useState("");
 
   const [newAppointment, setNewAppointment] = useState({
     patient_id: "",
@@ -73,6 +74,15 @@ export default function Appointments() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  // Debounce patient name filter
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedPatientName(filterPatientName);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [filterPatientName]);
+
   // Load existing notes from appointment when dialog opens
   useEffect(() => {
     if (isRecordDialogOpen && selectedAppointment) {
@@ -84,7 +94,7 @@ export default function Appointments() {
   }, [isRecordDialogOpen, selectedAppointment]);
 
   const { data: appointments, isLoading } = useQuery({
-    queryKey: ["appointments", filterDoctor, filterDate, filterStatus, filterPatientName],
+    queryKey: ["appointments", filterDoctor, filterDate, filterStatus, debouncedPatientName],
     queryFn: async () => {
       let query = supabase
         .from("appointments")
@@ -120,9 +130,9 @@ export default function Appointments() {
       if (error) throw error;
       
       // Apply patient name filter (client-side since we're filtering on joined data)
-      if (filterPatientName && data) {
+      if (debouncedPatientName && data) {
         return data.filter(apt => 
-          apt.patients?.full_name?.toLowerCase().includes(filterPatientName.toLowerCase())
+          apt.patients?.full_name?.toLowerCase().includes(debouncedPatientName.toLowerCase())
         );
       }
       
