@@ -908,7 +908,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                     </div>
                   </TableHead>
                   <TableHead>المريض</TableHead>
-                  <TableHead>
+                  <TableHead className="hidden md:table-cell">
                     <div className="space-y-2">
                       <span>الطبيب</span>
                       <Select value={filterDoctor} onValueChange={setFilterDoctor}>
@@ -926,7 +926,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                       </Select>
                     </div>
                   </TableHead>
-                  <TableHead>
+                  <TableHead className="hidden md:table-cell">
                     <div className="space-y-2">
                       <span>الحالة</span>
                       <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -942,8 +942,8 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                       </Select>
                     </div>
                   </TableHead>
-                  <TableHead>ملاحظات</TableHead>
-                  <TableHead>الإجراءات</TableHead>
+                  <TableHead className="hidden lg:table-cell">ملاحظات</TableHead>
+                  <TableHead className="hidden lg:table-cell">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -960,14 +960,14 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                       {new Date(appointment.scheduled_at).toLocaleString()}
                     </TableCell>
                     <TableCell>{appointment.patients?.full_name}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       {appointment.doctors?.full_name}
                       <br />
                       <span className="text-sm text-muted-foreground">
                         {appointment.doctors?.specialty}
                       </span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <span className={`px-2 py-1 rounded text-xs ${appointment.status === 'Completed' ? 'bg-green-100 text-green-800' :
                         appointment.status === 'Scheduled' ? 'bg-blue-100 text-blue-800' :
                           'bg-red-100 text-red-800'
@@ -976,8 +976,8 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                           appointment.status === 'Scheduled' ? 'مجدول' : 'ملغي'}
                       </span>
                     </TableCell>
-                    <TableCell>{appointment.notes || "-"}</TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
+                    <TableCell className="hidden lg:table-cell">{appointment.notes || "-"}</TableCell>
+                    <TableCell className="hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
                       {isMobile ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -1881,8 +1881,23 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
           </DialogHeader>
           {selectedAppointment && (
             <div className="space-y-2">
-              <div className="text-sm text-muted-foreground mb-4">
-                المريض: {selectedAppointment.patients?.full_name}
+              <div className="text-sm space-y-1 mb-4 p-3 bg-muted/50 rounded-lg">
+                <div><span className="font-medium">المريض:</span> {selectedAppointment.patients?.full_name}</div>
+                <div><span className="font-medium">الطبيب:</span> {selectedAppointment.doctors?.full_name}</div>
+                <div><span className="font-medium">التاريخ:</span> {new Date(selectedAppointment.scheduled_at).toLocaleString()}</div>
+                <div>
+                  <span className="font-medium">الحالة:</span>{" "}
+                  <span className={`px-2 py-1 rounded text-xs ${selectedAppointment.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                    selectedAppointment.status === 'Scheduled' ? 'bg-blue-100 text-blue-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                    {selectedAppointment.status === 'Completed' ? 'مكتمل' :
+                      selectedAppointment.status === 'Scheduled' ? 'مجدول' : 'ملغي'}
+                  </span>
+                </div>
+                {selectedAppointment.notes && (
+                  <div><span className="font-medium">ملاحظات:</span> {selectedAppointment.notes}</div>
+                )}
               </div>
               {selectedAppointment.status === 'Scheduled' && (
                 <>
@@ -1896,6 +1911,17 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                   >
                     <FileText className="h-4 w-4 ml-1" />
                     تسجيل علاج
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setIsExecutePlanDialogOpen(true);
+                      setShowOptionsMenu(false);
+                    }}
+                  >
+                    <ClipboardCheck className="h-4 w-4 ml-1" />
+                    تنفيذ خطة علاج
                   </Button>
                   <Button
                     variant="outline"
@@ -1932,7 +1958,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
               )}
               <Button
                 variant="outline"
-                className="w-full justify-start text-green-600 hover:text-green-700"
+                className="w-full justify-start"
                 onClick={() => {
                   sendWhatsAppMessage(selectedAppointment);
                   setShowOptionsMenu(false);
@@ -1950,6 +1976,39 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                 }}
               >
                 عرض ملف المريض
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => {
+                  setEditingAppointment(selectedAppointment);
+                  const scheduledDate = new Date(selectedAppointment.scheduled_at);
+                  const formattedDate = scheduledDate.toISOString().slice(0, 16);
+                  setNewAppointment({
+                    patient_id: selectedAppointment.patient_id,
+                    doctor_id: selectedAppointment.doctor_id,
+                    scheduled_at: formattedDate,
+                    notes: selectedAppointment.notes || "",
+                  });
+                  setIsDialogOpen(true);
+                  setShowOptionsMenu(false);
+                }}
+              >
+                <Pencil className="h-4 w-4 ml-1" />
+                تعديل الموعد
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-destructive hover:text-destructive"
+                onClick={() => {
+                  if (confirm("هل أنت متأكد من حذف هذا الموعد؟")) {
+                    deleteAppointmentMutation.mutate(selectedAppointment.id);
+                    setShowOptionsMenu(false);
+                  }
+                }}
+              >
+                <Trash2 className="h-4 w-4 ml-1" />
+                حذف الموعد
               </Button>
             </div>
           )}
