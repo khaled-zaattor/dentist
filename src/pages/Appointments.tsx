@@ -1919,10 +1919,12 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                 {treatmentPlans.map((plan: any) => (
                   <div
                     key={plan.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-accent ${
-                      selectedTreatmentPlan?.id === plan.id ? 'bg-accent border-primary' : ''
-                    }`}
-                    onClick={() => setSelectedTreatmentPlan(plan)}
+                    className="p-4 border rounded-lg cursor-pointer transition-colors hover:bg-accent hover:border-primary"
+                    onClick={() => {
+                      setSelectedTreatmentPlan(plan);
+                      setIsExecutePlanDetailsDialogOpen(true);
+                      setIsExecutePlanDialogOpen(false);
+                    }}
                   >
                     <div className="flex justify-between items-start">
                       <div>
@@ -1930,24 +1932,10 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                         <p className="text-sm text-muted-foreground">{plan.sub_treatments?.name}</p>
                         <p className="text-xs text-muted-foreground mt-1">رقم السن: {plan.tooth_number}</p>
                       </div>
-                      {selectedTreatmentPlan?.id === plan.id && (
-                        <Check className="h-5 w-5 text-primary" />
-                      )}
                     </div>
                   </div>
                 ))}
               </div>
-              {selectedTreatmentPlan && (
-                <Button
-                  onClick={() => {
-                    setIsExecutePlanDetailsDialogOpen(true);
-                    setIsExecutePlanDialogOpen(false);
-                  }}
-                  className="w-full"
-                >
-                  المتابعة لتنفيذ الخطة
-                </Button>
-              )}
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
