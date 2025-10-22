@@ -1993,7 +1993,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
               {planTreatmentSteps && planTreatmentSteps.length > 0 && (
                 <div>
                   <Label className="text-sm">خطوات العلاج</Label>
-                  <div className="space-y-1 max-h-60 overflow-y-auto mt-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto mt-2">
                     {planTreatmentSteps.map((step: any) => (
                       <div
                         key={step.id}
