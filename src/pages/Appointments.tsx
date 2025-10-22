@@ -1956,32 +1956,48 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
             <form onSubmit={(e) => {
               e.preventDefault();
               executePlanMutation.mutate();
-            }} className="space-y-4">
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="font-medium">{selectedTreatmentPlan.treatments?.name} - {selectedTreatmentPlan.sub_treatments?.name}</p>
-                <p className="text-sm text-muted-foreground">رقم السن: {selectedTreatmentPlan.tooth_number}</p>
+            }} className="space-y-3">
+              <div className="p-2 bg-muted rounded-lg">
+                <p className="text-sm font-medium">{selectedTreatmentPlan.treatments?.name} - {selectedTreatmentPlan.sub_treatments?.name}</p>
+                <p className="text-xs text-muted-foreground">رقم السن: {selectedTreatmentPlan.tooth_number}</p>
               </div>
 
-              <div>
-                <Label htmlFor="actual_cost">التكلفة الفعلية</Label>
-                <Input
-                  id="actual_cost"
-                  type="number"
-                  step="0.01"
-                  value={planExecution.actual_cost}
-                  onChange={(e) => setPlanExecution({ ...planExecution, actual_cost: e.target.value })}
-                  placeholder="أدخل التكلفة الفعلية"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="actual_cost" className="text-sm">التكلفة الفعلية</Label>
+                  <Input
+                    id="actual_cost"
+                    type="number"
+                    step="0.01"
+                    value={planExecution.actual_cost}
+                    onChange={(e) => setPlanExecution({ ...planExecution, actual_cost: e.target.value })}
+                    placeholder="أدخل التكلفة الفعلية"
+                    className="h-9"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="payment_amount" className="text-sm">المبلغ المدفوع</Label>
+                  <Input
+                    id="payment_amount"
+                    type="number"
+                    step="0.01"
+                    value={planExecution.payment_amount}
+                    onChange={(e) => setPlanExecution({ ...planExecution, payment_amount: e.target.value })}
+                    placeholder="أدخل المبلغ المدفوع (اختياري)"
+                    className="h-9"
+                  />
+                </div>
               </div>
 
               {planTreatmentSteps && planTreatmentSteps.length > 0 && (
                 <div>
-                  <Label>خطوات العلاج</Label>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                  <Label className="text-sm">خطوات العلاج</Label>
+                  <div className="space-y-1 max-h-60 overflow-y-auto mt-2">
                     {planTreatmentSteps.map((step: any) => (
                       <div
                         key={step.id}
-                        className={`flex items-start space-x-2 p-3 border rounded-lg transition-colors ${
+                        className={`flex items-start space-x-2 p-2 border rounded transition-colors ${
                           selectedSteps.includes(step.id) ? 'bg-blue-50 border-blue-200' : 'bg-card'
                         }`}
                       >
@@ -1995,17 +2011,17 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                               setSelectedSteps(selectedSteps.filter(id => id !== step.id));
                             }
                           }}
-                          className="mt-1"
+                          className="mt-0.5"
                         />
                         <div className="flex-1">
                           <Label
                             htmlFor={`plan-step-${step.id}`}
-                            className="cursor-pointer text-sm font-medium block"
+                            className="cursor-pointer text-xs font-medium block leading-tight"
                           >
                             {step.step_order}. {step.step_name}
                           </Label>
                           {step.step_description && (
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-xs text-muted-foreground mt-0.5 leading-tight">
                               {step.step_description}
                             </p>
                           )}
@@ -2013,37 +2029,26 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-xs text-muted-foreground mt-1">
                     اختر الخطوات المكتملة في هذا الموعد ({selectedSteps.length} محددة)
                   </p>
                 </div>
               )}
 
               <div>
-                <Label htmlFor="payment_amount">المبلغ المدفوع</Label>
-                <Input
-                  id="payment_amount"
-                  type="number"
-                  step="0.01"
-                  value={planExecution.payment_amount}
-                  onChange={(e) => setPlanExecution({ ...planExecution, payment_amount: e.target.value })}
-                  placeholder="أدخل المبلغ المدفوع (اختياري)"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="notes">ملاحظات الموعد</Label>
+                <Label htmlFor="notes" className="text-sm">ملاحظات الموعد</Label>
                 <Textarea
                   id="notes"
                   value={planExecution.notes}
                   onChange={(e) => setPlanExecution({ ...planExecution, notes: e.target.value })}
                   placeholder="أدخل ملاحظات إضافية"
-                  rows={3}
+                  rows={2}
+                  className="text-sm"
                 />
               </div>
 
-              <div className="flex gap-2">
-                <Button type="submit" disabled={executePlanMutation.isPending} className="flex-1">
+              <div className="flex gap-2 pt-2">
+                <Button type="submit" disabled={executePlanMutation.isPending} className="flex-1 h-9">
                   {executePlanMutation.isPending ? "جاري التنفيذ..." : "تنفيذ الخطة"}
                 </Button>
                 <Button
@@ -2053,6 +2058,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                     setIsExecutePlanDetailsDialogOpen(false);
                     setIsExecutePlanDialogOpen(true);
                   }}
+                  className="h-9"
                 >
                   رجوع
                 </Button>
