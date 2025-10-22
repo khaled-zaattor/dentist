@@ -432,11 +432,28 @@ export default function Appointments() {
         if (paymentError) throw paymentError;
       }
 
+      // If treatment is not completed, add to unfinished_sub_treatments
+      if (!isCompleted) {
+        const { error: unfinishedError } = await supabase
+          .from("unfinished_sub_treatments")
+          .insert({
+            patient_id: selectedAppointment.patient_id,
+            treatment_id: record.treatment_id,
+            sub_treatment_id: record.sub_treatment_id,
+            tooth_number: record.tooth_numbers.join(", "),
+            last_appointment_id: selectedAppointment.id,
+            notes: record.notes || null,
+            started_at: new Date().toISOString()
+          });
+        if (unfinishedError) throw unfinishedError;
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       queryClient.invalidateQueries({ queryKey: ["completed-steps"] });
+      queryClient.invalidateQueries({ queryKey: ["unfinished-treatments"] });
       setIsRecordDialogOpen(false);
       setTreatmentRecord({ treatment_id: "", sub_treatment_id: "", tooth_numbers: [], actual_cost: "", payment_amount: "", notes: "" });
       setTeethType("adult");
@@ -509,6 +526,7 @@ export default function Appointments() {
       const allStepsCompleted = allSteps.every(step => completedStepIds.includes(step.id));
 
       if (allStepsCompleted) {
+        // Mark treatment as completed
         await supabase
           .from("treatment_records")
           .update({ 
@@ -516,6 +534,27 @@ export default function Appointments() {
             updated_at: new Date().toISOString()
           })
           .eq("id", selectedTreatmentRecord.id);
+
+        // Remove from unfinished_sub_treatments
+        await supabase
+          .from("unfinished_sub_treatments")
+          .delete()
+          .eq("patient_id", selectedAppointment.patient_id)
+          .eq("treatment_id", selectedTreatmentRecord.treatment_id)
+          .eq("sub_treatment_id", selectedTreatmentRecord.sub_treatment_id)
+          .eq("tooth_number", selectedTreatmentRecord.tooth_number);
+      } else {
+        // Update last_appointment_id in unfinished_sub_treatments
+        await supabase
+          .from("unfinished_sub_treatments")
+          .update({ 
+            last_appointment_id: selectedAppointment.id,
+            updated_at: new Date().toISOString()
+          })
+          .eq("patient_id", selectedAppointment.patient_id)
+          .eq("treatment_id", selectedTreatmentRecord.treatment_id)
+          .eq("sub_treatment_id", selectedTreatmentRecord.sub_treatment_id)
+          .eq("tooth_number", selectedTreatmentRecord.tooth_number);
       }
     },
     onSuccess: () => {
@@ -588,6 +627,22 @@ export default function Appointments() {
         if (paymentError) throw paymentError;
       }
 
+      // If treatment is not completed, add to unfinished_sub_treatments
+      if (!isCompleted) {
+        const { error: unfinishedError } = await supabase
+          .from("unfinished_sub_treatments")
+          .insert({
+            patient_id: selectedAppointment.patient_id,
+            treatment_id: selectedTreatmentPlan.treatment_id,
+            sub_treatment_id: selectedTreatmentPlan.sub_treatment_id,
+            tooth_number: selectedTreatmentPlan.tooth_number,
+            last_appointment_id: selectedAppointment.id,
+            notes: planExecution.notes || null,
+            started_at: new Date().toISOString()
+          });
+        if (unfinishedError) throw unfinishedError;
+      }
+
       // Mark treatment plan as executed
       const { error: planError } = await supabase
         .from("treatment_plans")
@@ -604,6 +659,7 @@ export default function Appointments() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       queryClient.invalidateQueries({ queryKey: ["treatment-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["unfinished-treatments"] });
       setIsExecutePlanDetailsDialogOpen(false);
       setIsExecutePlanDialogOpen(false);
       setSelectedTreatmentPlan(null);
