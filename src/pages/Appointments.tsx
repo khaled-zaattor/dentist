@@ -1875,17 +1875,19 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
 
       {/* Options Menu Dialog */}
       <Dialog open={showOptionsMenu} onOpenChange={setShowOptionsMenu}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>خيارات الموعد</DialogTitle>
           </DialogHeader>
           {selectedAppointment && (
-            <div className="space-y-2">
-              <div className="text-sm space-y-1 mb-4 p-3 bg-muted/50 rounded-lg">
+            <div className="space-y-4">
+              {/* معلومات الموعد في عامودين */}
+              <div className="grid grid-cols-2 gap-3 text-sm p-3 bg-muted/50 rounded-lg">
                 <div><span className="font-medium">المريض:</span> {selectedAppointment.patients?.full_name}</div>
                 <div><span className="font-medium">الطبيب:</span> {selectedAppointment.doctors?.full_name}</div>
-                <div><span className="font-medium">التاريخ:</span> {new Date(selectedAppointment.scheduled_at).toLocaleString()}</div>
-                <div>
+                <div><span className="font-medium">التاريخ:</span> {new Date(selectedAppointment.scheduled_at).toLocaleDateString('ar')}</div>
+                <div><span className="font-medium">الوقت:</span> {new Date(selectedAppointment.scheduled_at).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}</div>
+                <div className="col-span-2">
                   <span className="font-medium">الحالة:</span>{" "}
                   <span className={`px-2 py-1 rounded text-xs ${selectedAppointment.status === 'Completed' ? 'bg-green-100 text-green-800' :
                     selectedAppointment.status === 'Scheduled' ? 'bg-blue-100 text-blue-800' :
@@ -1896,120 +1898,124 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                   </span>
                 </div>
                 {selectedAppointment.notes && (
-                  <div><span className="font-medium">ملاحظات:</span> {selectedAppointment.notes}</div>
+                  <div className="col-span-2"><span className="font-medium">ملاحظات:</span> {selectedAppointment.notes}</div>
                 )}
               </div>
-              {selectedAppointment.status === 'Scheduled' && (
-                <>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => {
-                      setIsRecordDialogOpen(true);
-                      setShowOptionsMenu(false);
-                    }}
-                  >
-                    <FileText className="h-4 w-4 ml-1" />
-                    تسجيل علاج
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => {
-                      setIsExecutePlanDialogOpen(true);
-                      setShowOptionsMenu(false);
-                    }}
-                  >
-                    <ClipboardCheck className="h-4 w-4 ml-1" />
-                    تنفيذ خطة علاج
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => {
-                      setIsResumeDialogOpen(true);
-                      setShowOptionsMenu(false);
-                    }}
-                  >
-                    <CheckSquare className="h-4 w-4 ml-1" />
-                    استكمال علاج
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => {
-                      updateAppointmentStatus(selectedAppointment.id, 'Completed');
-                      setShowOptionsMenu(false);
-                    }}
-                  >
-                    تمييز كمكتمل
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => {
-                      updateAppointmentStatus(selectedAppointment.id, 'Cancelled');
-                      setShowOptionsMenu(false);
-                    }}
-                  >
-                    إلغاء الموعد
-                  </Button>
-                </>
-              )}
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={() => {
-                  sendWhatsAppMessage(selectedAppointment);
-                  setShowOptionsMenu(false);
-                }}
-              >
-                <MessageCircle className="h-4 w-4 ml-1" />
-                إرسال واتساب
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={() => {
-                  navigate(`/patient-profile/${selectedAppointment.patient_id}`);
-                  setShowOptionsMenu(false);
-                }}
-              >
-                عرض ملف المريض
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={() => {
-                  setEditingAppointment(selectedAppointment);
-                  const scheduledDate = new Date(selectedAppointment.scheduled_at);
-                  const formattedDate = scheduledDate.toISOString().slice(0, 16);
-                  setNewAppointment({
-                    patient_id: selectedAppointment.patient_id,
-                    doctor_id: selectedAppointment.doctor_id,
-                    scheduled_at: formattedDate,
-                    notes: selectedAppointment.notes || "",
-                  });
-                  setIsDialogOpen(true);
-                  setShowOptionsMenu(false);
-                }}
-              >
-                <Pencil className="h-4 w-4 ml-1" />
-                تعديل الموعد
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-destructive hover:text-destructive"
-                onClick={() => {
-                  if (confirm("هل أنت متأكد من حذف هذا الموعد؟")) {
-                    deleteAppointmentMutation.mutate(selectedAppointment.id);
+
+              {/* الخيارات في عامودين */}
+              <div className="grid grid-cols-2 gap-2">
+                {selectedAppointment.status === 'Scheduled' && (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="justify-start"
+                      onClick={() => {
+                        setIsRecordDialogOpen(true);
+                        setShowOptionsMenu(false);
+                      }}
+                    >
+                      <FileText className="h-4 w-4 ml-1" />
+                      تسجيل علاج
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="justify-start"
+                      onClick={() => {
+                        setIsExecutePlanDialogOpen(true);
+                        setShowOptionsMenu(false);
+                      }}
+                    >
+                      <ClipboardCheck className="h-4 w-4 ml-1" />
+                      تنفيذ خطة علاج
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="justify-start"
+                      onClick={() => {
+                        setIsResumeDialogOpen(true);
+                        setShowOptionsMenu(false);
+                      }}
+                    >
+                      <CheckSquare className="h-4 w-4 ml-1" />
+                      استكمال علاج
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="justify-start"
+                      onClick={() => {
+                        updateAppointmentStatus(selectedAppointment.id, 'Completed');
+                        setShowOptionsMenu(false);
+                      }}
+                    >
+                      تمييز كمكتمل
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="justify-start"
+                      onClick={() => {
+                        updateAppointmentStatus(selectedAppointment.id, 'Cancelled');
+                        setShowOptionsMenu(false);
+                      }}
+                    >
+                      إلغاء الموعد
+                    </Button>
+                  </>
+                )}
+                <Button
+                  variant="outline"
+                  className="justify-start"
+                  onClick={() => {
+                    sendWhatsAppMessage(selectedAppointment);
                     setShowOptionsMenu(false);
-                  }
-                }}
-              >
-                <Trash2 className="h-4 w-4 ml-1" />
-                حذف الموعد
-              </Button>
+                  }}
+                >
+                  <MessageCircle className="h-4 w-4 ml-1" />
+                  إرسال واتساب
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-start"
+                  onClick={() => {
+                    navigate(`/patient-profile/${selectedAppointment.patient_id}`);
+                    setShowOptionsMenu(false);
+                  }}
+                >
+                  عرض ملف المريض
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-start"
+                  onClick={() => {
+                    setEditingAppointment(selectedAppointment);
+                    const scheduledDate = new Date(selectedAppointment.scheduled_at);
+                    const formattedDate = scheduledDate.toISOString().slice(0, 16);
+                    setNewAppointment({
+                      patient_id: selectedAppointment.patient_id,
+                      doctor_id: selectedAppointment.doctor_id,
+                      scheduled_at: formattedDate,
+                      notes: selectedAppointment.notes || "",
+                    });
+                    setIsDialogOpen(true);
+                    setShowOptionsMenu(false);
+                  }}
+                >
+                  <Pencil className="h-4 w-4 ml-1" />
+                  تعديل الموعد
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-start text-destructive hover:text-destructive"
+                  onClick={() => {
+                    if (confirm("هل أنت متأكد من حذف هذا الموعد؟")) {
+                      deleteAppointmentMutation.mutate(selectedAppointment.id);
+                      setShowOptionsMenu(false);
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 ml-1" />
+                  حذف الموعد
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
