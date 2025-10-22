@@ -539,12 +539,12 @@ export default function Appointments() {
 
       // Check if all steps are completed and mark treatment as completed
       const allSteps = resumeTreatmentSteps || [];
-      const currentStepData = steps || [];
-      const allCompletedSteps = [...(resumeCompletedSteps || []), ...currentStepData];
-      const completedStepIds = allCompletedSteps
-        .filter(cs => typeof cs === 'object' && cs.sub_treatment_step_id)
-        .map(cs => (cs as any).sub_treatment_step_id);
-      const allStepsCompleted = allSteps.every(step => completedStepIds.includes(step.id));
+      const previouslyCompletedIds = (resumeCompletedSteps || [])
+        .map(cs => (cs as any).sub_treatment_step_id)
+        .filter(Boolean);
+      const currentStepIds = steps || [];
+      const allCompletedStepIds = [...previouslyCompletedIds, ...currentStepIds];
+      const allStepsCompleted = allSteps.length > 0 && allSteps.every(step => allCompletedStepIds.includes(step.id));
 
       if (allStepsCompleted) {
         // Mark treatment as completed
