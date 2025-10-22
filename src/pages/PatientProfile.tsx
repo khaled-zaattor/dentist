@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Plus, Calendar, CreditCard, Edit, Download, Trash2, FileText } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -36,6 +37,7 @@ export default function PatientProfile() {
     sub_treatment_id: "",
     tooth_number: "",
   });
+  const [planTeethType, setPlanTeethType] = useState<"adult" | "child">("adult");
 
   const [newAppointment, setNewAppointment] = useState({
     doctor_id: "",
@@ -626,20 +628,309 @@ export default function PatientProfile() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label htmlFor="tooth_number">رقم السن</Label>
-                    <Input
-                      id="tooth_number"
-                      value={treatmentPlan.tooth_number}
-                      onChange={(e) => setTreatmentPlan({ ...treatmentPlan, tooth_number: e.target.value })}
-                      placeholder="أدخل رقم السن"
-                      required
-                    />
-                  </div>
-                  <Button type="submit" disabled={createTreatmentPlanMutation.isPending}>
-                    {createTreatmentPlanMutation.isPending ? "جاري الإضافة..." : "إضافة"}
-                  </Button>
-                </form>
+
+                  {/* Tooth Selection Section */}
+                {(() => {
+                  const selectedSubTreatment = subTreatments?.find(st => st.id === treatmentPlan.sub_treatment_id);
+                  const toothAssociation = selectedSubTreatment?.tooth_association || "not_related";
+                  const isToothSelectionEnabled = toothAssociation !== "not_related";
+                  const isSingleToothOnly = toothAssociation === "single_tooth";
+
+                  return (
+                    <div>
+                      <Label>رقم السن</Label>
+                      {!isToothSelectionEnabled ? (
+                        <div className="border rounded-lg p-3 bg-muted/30 text-center text-sm text-muted-foreground">
+                          هذا العلاج غير مرتبط بأسنان محددة
+                        </div>
+                      ) : (
+                        <div className="border rounded-lg p-3 bg-muted/30">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="text-center text-xs font-medium flex-1">
+                              مخطط الأسنان - النظام العالمي
+                              {isSingleToothOnly && (
+                                <span className="block text-xs text-primary mt-1">يُسمح باختيار سن واحد فقط</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* اختيار نوع الأسنان */}
+                          <div className="mb-3">
+                            <RadioGroup 
+                              value={planTeethType} 
+                              onValueChange={(value: "adult" | "child") => {
+                                setPlanTeethType(value);
+                                setTreatmentPlan({ ...treatmentPlan, tooth_number: "" });
+                              }} 
+                              className="flex gap-4 justify-center"
+                            >
+                              <div className="flex items-center space-x-2 space-x-reverse">
+                                <RadioGroupItem value="adult" id="plan-adult" />
+                                <Label htmlFor="plan-adult" className="cursor-pointer">أسنان البالغين</Label>
+                              </div>
+                              <div className="flex items-center space-x-2 space-x-reverse">
+                                <RadioGroupItem value="child" id="plan-child" />
+                                <Label htmlFor="plan-child" className="cursor-pointer">أسنان الأطفال</Label>
+                              </div>
+                            </RadioGroup>
+                          </div>
+
+                          {planTeethType === "adult" ? (
+                            <>
+                              {/* أسنان البالغين */}
+                              <div className="mb-3">
+                                <div className="text-xs text-center text-muted-foreground mb-1">الفك العلوي</div>
+                                <div className="grid grid-cols-8 gap-1 mb-1">
+                                  {[18, 17, 16, 15, 14, 13, 12, 11].map((toothNum) => (
+                                    <button
+                                      key={toothNum}
+                                      type="button"
+                                      onClick={() => {
+                                        const toothStr = toothNum.toString();
+                                        if (isSingleToothOnly) {
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: toothStr });
+                                        } else {
+                                          const currentTeeth = treatmentPlan.tooth_number.split(", ").filter(t => t);
+                                          const newTeeth = currentTeeth.includes(toothStr)
+                                            ? currentTeeth.filter(t => t !== toothStr)
+                                            : [...currentTeeth, toothStr];
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: newTeeth.join(", ") });
+                                        }
+                                      }}
+                                      className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${
+                                        treatmentPlan.tooth_number.split(", ").includes(toothNum.toString())
+                                          ? 'bg-primary text-primary-foreground border-primary'
+                                          : 'bg-background hover:bg-muted border-border'
+                                      }`}
+                                    >
+                                      {toothNum}
+                                    </button>
+                                  ))}
+                                </div>
+                                <div className="grid grid-cols-8 gap-1">
+                                  {[21, 22, 23, 24, 25, 26, 27, 28].map((toothNum) => (
+                                    <button
+                                      key={toothNum}
+                                      type="button"
+                                      onClick={() => {
+                                        const toothStr = toothNum.toString();
+                                        if (isSingleToothOnly) {
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: toothStr });
+                                        } else {
+                                          const currentTeeth = treatmentPlan.tooth_number.split(", ").filter(t => t);
+                                          const newTeeth = currentTeeth.includes(toothStr)
+                                            ? currentTeeth.filter(t => t !== toothStr)
+                                            : [...currentTeeth, toothStr];
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: newTeeth.join(", ") });
+                                        }
+                                      }}
+                                      className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${
+                                        treatmentPlan.tooth_number.split(", ").includes(toothNum.toString())
+                                          ? 'bg-primary text-primary-foreground border-primary'
+                                          : 'bg-background hover:bg-muted border-border'
+                                      }`}
+                                    >
+                                      {toothNum}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div>
+                                <div className="text-xs text-center text-muted-foreground mb-1">الفك السفلي</div>
+                                <div className="grid grid-cols-8 gap-1 mb-1">
+                                  {[31, 32, 33, 34, 35, 36, 37, 38].map((toothNum) => (
+                                    <button
+                                      key={toothNum}
+                                      type="button"
+                                      onClick={() => {
+                                        const toothStr = toothNum.toString();
+                                        if (isSingleToothOnly) {
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: toothStr });
+                                        } else {
+                                          const currentTeeth = treatmentPlan.tooth_number.split(", ").filter(t => t);
+                                          const newTeeth = currentTeeth.includes(toothStr)
+                                            ? currentTeeth.filter(t => t !== toothStr)
+                                            : [...currentTeeth, toothStr];
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: newTeeth.join(", ") });
+                                        }
+                                      }}
+                                      className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${
+                                        treatmentPlan.tooth_number.split(", ").includes(toothNum.toString())
+                                          ? 'bg-primary text-primary-foreground border-primary'
+                                          : 'bg-background hover:bg-muted border-border'
+                                      }`}
+                                    >
+                                      {toothNum}
+                                    </button>
+                                  ))}
+                                </div>
+                                <div className="grid grid-cols-8 gap-1">
+                                  {[41, 42, 43, 44, 45, 46, 47, 48].map((toothNum) => (
+                                    <button
+                                      key={toothNum}
+                                      type="button"
+                                      onClick={() => {
+                                        const toothStr = toothNum.toString();
+                                        if (isSingleToothOnly) {
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: toothStr });
+                                        } else {
+                                          const currentTeeth = treatmentPlan.tooth_number.split(", ").filter(t => t);
+                                          const newTeeth = currentTeeth.includes(toothStr)
+                                            ? currentTeeth.filter(t => t !== toothStr)
+                                            : [...currentTeeth, toothStr];
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: newTeeth.join(", ") });
+                                        }
+                                      }}
+                                      className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${
+                                        treatmentPlan.tooth_number.split(", ").includes(toothNum.toString())
+                                          ? 'bg-primary text-primary-foreground border-primary'
+                                          : 'bg-background hover:bg-muted border-border'
+                                      }`}
+                                    >
+                                      {toothNum}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {/* أسنان الأطفال */}
+                              <div className="mb-3">
+                                <div className="text-xs text-center text-muted-foreground mb-1">الفك العلوي</div>
+                                <div className="grid grid-cols-5 gap-1 mb-1">
+                                  {[55, 54, 53, 52, 51].map((toothNum) => (
+                                    <button
+                                      key={toothNum}
+                                      type="button"
+                                      onClick={() => {
+                                        const toothStr = toothNum.toString();
+                                        if (isSingleToothOnly) {
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: toothStr });
+                                        } else {
+                                          const currentTeeth = treatmentPlan.tooth_number.split(", ").filter(t => t);
+                                          const newTeeth = currentTeeth.includes(toothStr)
+                                            ? currentTeeth.filter(t => t !== toothStr)
+                                            : [...currentTeeth, toothStr];
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: newTeeth.join(", ") });
+                                        }
+                                      }}
+                                      className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${
+                                        treatmentPlan.tooth_number.split(", ").includes(toothNum.toString())
+                                          ? 'bg-primary text-primary-foreground border-primary'
+                                          : 'bg-background hover:bg-muted border-border'
+                                      }`}
+                                    >
+                                      {toothNum}
+                                    </button>
+                                  ))}
+                                </div>
+                                <div className="grid grid-cols-5 gap-1">
+                                  {[61, 62, 63, 64, 65].map((toothNum) => (
+                                    <button
+                                      key={toothNum}
+                                      type="button"
+                                      onClick={() => {
+                                        const toothStr = toothNum.toString();
+                                        if (isSingleToothOnly) {
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: toothStr });
+                                        } else {
+                                          const currentTeeth = treatmentPlan.tooth_number.split(", ").filter(t => t);
+                                          const newTeeth = currentTeeth.includes(toothStr)
+                                            ? currentTeeth.filter(t => t !== toothStr)
+                                            : [...currentTeeth, toothStr];
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: newTeeth.join(", ") });
+                                        }
+                                      }}
+                                      className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${
+                                        treatmentPlan.tooth_number.split(", ").includes(toothNum.toString())
+                                          ? 'bg-primary text-primary-foreground border-primary'
+                                          : 'bg-background hover:bg-muted border-border'
+                                      }`}
+                                    >
+                                      {toothNum}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div>
+                                <div className="text-xs text-center text-muted-foreground mb-1">الفك السفلي</div>
+                                <div className="grid grid-cols-5 gap-1 mb-1">
+                                  {[71, 72, 73, 74, 75].map((toothNum) => (
+                                    <button
+                                      key={toothNum}
+                                      type="button"
+                                      onClick={() => {
+                                        const toothStr = toothNum.toString();
+                                        if (isSingleToothOnly) {
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: toothStr });
+                                        } else {
+                                          const currentTeeth = treatmentPlan.tooth_number.split(", ").filter(t => t);
+                                          const newTeeth = currentTeeth.includes(toothStr)
+                                            ? currentTeeth.filter(t => t !== toothStr)
+                                            : [...currentTeeth, toothStr];
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: newTeeth.join(", ") });
+                                        }
+                                      }}
+                                      className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${
+                                        treatmentPlan.tooth_number.split(", ").includes(toothNum.toString())
+                                          ? 'bg-primary text-primary-foreground border-primary'
+                                          : 'bg-background hover:bg-muted border-border'
+                                      }`}
+                                    >
+                                      {toothNum}
+                                    </button>
+                                  ))}
+                                </div>
+                                <div className="grid grid-cols-5 gap-1">
+                                  {[81, 82, 83, 84, 85].map((toothNum) => (
+                                    <button
+                                      key={toothNum}
+                                      type="button"
+                                      onClick={() => {
+                                        const toothStr = toothNum.toString();
+                                        if (isSingleToothOnly) {
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: toothStr });
+                                        } else {
+                                          const currentTeeth = treatmentPlan.tooth_number.split(", ").filter(t => t);
+                                          const newTeeth = currentTeeth.includes(toothStr)
+                                            ? currentTeeth.filter(t => t !== toothStr)
+                                            : [...currentTeeth, toothStr];
+                                          setTreatmentPlan({ ...treatmentPlan, tooth_number: newTeeth.join(", ") });
+                                        }
+                                      }}
+                                      className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${
+                                        treatmentPlan.tooth_number.split(", ").includes(toothNum.toString())
+                                          ? 'bg-primary text-primary-foreground border-primary'
+                                          : 'bg-background hover:bg-muted border-border'
+                                      }`}
+                                    >
+                                      {toothNum}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </>
+                          )}
+
+                          {treatmentPlan.tooth_number && (
+                            <div className="mt-3 p-2 bg-primary/10 rounded text-center">
+                              <span className="text-sm font-medium">الأسنان المختارة: </span>
+                              <span className="text-sm text-primary">{treatmentPlan.tooth_number}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                <Button type="submit" disabled={createTreatmentPlanMutation.isPending}>
+                  {createTreatmentPlanMutation.isPending ? "جاري الإضافة..." : "إضافة"}
+                </Button>
+              </form>
               </DialogContent>
             </Dialog>
           </CardContent>
