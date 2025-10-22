@@ -269,6 +269,32 @@ export default function Appointments() {
     enabled: !!selectedTreatmentPlan?.sub_treatment_id,
   });
 
+  // Query to get sub_treatment details for the selected plan
+  const { data: planSubTreatmentDetails } = useQuery({
+    queryKey: ["plan-sub-treatment-details", selectedTreatmentPlan?.sub_treatment_id],
+    queryFn: async () => {
+      if (!selectedTreatmentPlan?.sub_treatment_id) return null;
+      const { data, error } = await supabase
+        .from("sub_treatments")
+        .select("*")
+        .eq("id", selectedTreatmentPlan.sub_treatment_id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedTreatmentPlan?.sub_treatment_id,
+  });
+
+  // Auto-fill actual_cost when treatment plan is selected
+  useEffect(() => {
+    if (selectedTreatmentPlan && planSubTreatmentDetails) {
+      setPlanExecution(prev => ({
+        ...prev,
+        actual_cost: planSubTreatmentDetails.estimated_cost?.toString().replace(/,/g, '') || ""
+      }));
+    }
+  }, [selectedTreatmentPlan, planSubTreatmentDetails]);
+
   // Query to get steps for the selected treatment record
   const { data: resumeTreatmentSteps } = useQuery({
     queryKey: ["resume-treatment-steps", selectedTreatmentRecord?.sub_treatment_id],
@@ -351,6 +377,10 @@ export default function Appointments() {
 
   const recordTreatmentMutation = useMutation({
     mutationFn: async (record: typeof treatmentRecord) => {
+      // Check if all steps are completed
+      const allSteps = treatmentSteps || [];
+      const isCompleted = allSteps.length === 0 || (selectedSteps.length === allSteps.length);
+
       // Insert treatment record
       const { data, error } = await supabase
         .from("treatment_records")
@@ -360,7 +390,8 @@ export default function Appointments() {
           tooth_number: record.tooth_numbers.join(", "),
           appointment_id: selectedAppointment.id,
           actual_cost: record.actual_cost ? parseFloat(record.actual_cost) : null,
-          performed_at: new Date().toISOString()
+          performed_at: new Date().toISOString(),
+          is_completed: isCompleted
         }])
         .select();
       if (error) throw error;
@@ -502,6 +533,10 @@ export default function Appointments() {
     mutationFn: async () => {
       if (!selectedTreatmentPlan) throw new Error("No treatment plan selected");
 
+      // Check if all steps are completed
+      const allSteps = planTreatmentSteps || [];
+      const isCompleted = allSteps.length === 0 || (selectedSteps.length === allSteps.length);
+
       // Create treatment record
       const { data: recordData, error: recordError } = await supabase
         .from("treatment_records")
@@ -511,7 +546,8 @@ export default function Appointments() {
           tooth_number: selectedTreatmentPlan.tooth_number,
           appointment_id: selectedAppointment.id,
           actual_cost: planExecution.actual_cost ? parseFloat(planExecution.actual_cost) : null,
-          performed_at: new Date().toISOString()
+          performed_at: new Date().toISOString(),
+          is_completed: isCompleted
         }])
         .select();
       if (recordError) throw recordError;
