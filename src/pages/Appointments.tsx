@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Plus, FileText, Filter, X, MessageCircle, CheckSquare, MoreHorizontal, Check, ChevronsUpDown, Pencil, Trash2 } from "lucide-react";
+import { Plus, FileText, Filter, X, MessageCircle, CheckSquare, MoreHorizontal, Check, ChevronsUpDown, Pencil, Trash2, ClipboardCheck } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -26,12 +26,21 @@ export default function Appointments() {
   const [isRecordDialogOpen, setIsRecordDialogOpen] = useState(false);
   const [isStepsDialogOpen, setIsStepsDialogOpen] = useState(false);
   const [isResumeDialogOpen, setIsResumeDialogOpen] = useState(false);
+  const [isExecutePlanDialogOpen, setIsExecutePlanDialogOpen] = useState(false);
+  const [isExecutePlanDetailsDialogOpen, setIsExecutePlanDetailsDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [selectedSteps, setSelectedSteps] = useState<string[]>([]);
   const [selectedTreatmentRecord, setSelectedTreatmentRecord] = useState<any>(null);
+  const [selectedTreatmentPlan, setSelectedTreatmentPlan] = useState<any>(null);
   const [openPatientCombobox, setOpenPatientCombobox] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<any>(null);
+
+  const [planExecution, setPlanExecution] = useState({
+    actual_cost: "",
+    payment_amount: "",
+    notes: "",
+  });
 
   const isMobile = useIsMobile();
 
@@ -221,6 +230,43 @@ export default function Appointments() {
       }));
     },
     enabled: !!selectedAppointment?.patient_id,
+  });
+
+  // Query to get treatment plans for a patient
+  const { data: treatmentPlans } = useQuery({
+    queryKey: ["treatment-plans", selectedAppointment?.patient_id],
+    queryFn: async () => {
+      if (!selectedAppointment?.patient_id) return [];
+      const { data, error } = await supabase
+        .from("treatment_plans")
+        .select(`
+          *,
+          treatments (name),
+          sub_treatments (name)
+        `)
+        .eq("patient_id", selectedAppointment.patient_id)
+        .eq("is_executed", false)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedAppointment?.patient_id,
+  });
+
+  // Query to get steps for selected treatment plan
+  const { data: planTreatmentSteps } = useQuery({
+    queryKey: ["plan-treatment-steps", selectedTreatmentPlan?.sub_treatment_id],
+    queryFn: async () => {
+      if (!selectedTreatmentPlan?.sub_treatment_id) return [];
+      const { data, error } = await supabase
+        .from("sub_treatment_steps")
+        .select("*")
+        .eq("sub_treatment_id", selectedTreatmentPlan.sub_treatment_id)
+        .order("step_order");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedTreatmentPlan?.sub_treatment_id,
   });
 
   // Query to get steps for the selected treatment record
@@ -448,6 +494,86 @@ export default function Appointments() {
       setSelectedSteps([]);
       setSelectedTreatmentRecord(null);
       toast({ title: "نجح", description: "تم استكمال خطوات العلاج بنجاح" });
+    },
+  });
+
+  // Mutation to execute treatment plan
+  const executePlanMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedTreatmentPlan) throw new Error("No treatment plan selected");
+
+      // Create treatment record
+      const { data: recordData, error: recordError } = await supabase
+        .from("treatment_records")
+        .insert([{
+          treatment_id: selectedTreatmentPlan.treatment_id,
+          sub_treatment_id: selectedTreatmentPlan.sub_treatment_id,
+          tooth_number: selectedTreatmentPlan.tooth_number,
+          appointment_id: selectedAppointment.id,
+          actual_cost: planExecution.actual_cost ? parseFloat(planExecution.actual_cost) : null,
+          performed_at: new Date().toISOString()
+        }])
+        .select();
+      if (recordError) throw recordError;
+
+      // Update appointment notes if provided
+      if (planExecution.notes.trim()) {
+        const { error: notesError } = await supabase
+          .from("appointments")
+          .update({ notes: planExecution.notes })
+          .eq("id", selectedAppointment.id);
+        if (notesError) throw notesError;
+      }
+
+      // Save completed treatment steps if any are selected
+      if (selectedSteps.length > 0) {
+        const stepData = selectedSteps.map(stepId => ({
+          appointment_id: selectedAppointment.id,
+          sub_treatment_step_id: stepId,
+          is_completed: true,
+          completed_at: new Date().toISOString()
+        }));
+
+        const { error: stepsError } = await supabase
+          .from("appointment_treatment_steps")
+          .insert(stepData);
+        if (stepsError) throw stepsError;
+      }
+
+      // Add payment if payment_amount is provided
+      if (planExecution.payment_amount && parseFloat(planExecution.payment_amount) > 0) {
+        const { error: paymentError } = await supabase
+          .from("payments")
+          .insert({
+            appointment_id: selectedAppointment.id,
+            amount: parseFloat(planExecution.payment_amount),
+            paid_at: new Date().toISOString()
+          });
+        if (paymentError) throw paymentError;
+      }
+
+      // Mark treatment plan as executed
+      const { error: planError } = await supabase
+        .from("treatment_plans")
+        .update({ 
+          is_executed: true, 
+          executed_at: new Date().toISOString(),
+          appointment_id: selectedAppointment.id 
+        })
+        .eq("id", selectedTreatmentPlan.id);
+      if (planError) throw planError;
+
+      return recordData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["treatment-plans"] });
+      setIsExecutePlanDetailsDialogOpen(false);
+      setIsExecutePlanDialogOpen(false);
+      setSelectedTreatmentPlan(null);
+      setPlanExecution({ actual_cost: "", payment_amount: "", notes: "" });
+      setSelectedSteps([]);
+      toast({ title: "نجح", description: "تم تنفيذ خطة العلاج بنجاح" });
     },
   });
 
@@ -783,6 +909,15 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                 <DropdownMenuItem
                                   onClick={() => {
                                     setSelectedAppointment(appointment);
+                                    setIsExecutePlanDialogOpen(true);
+                                  }}
+                                >
+                                  <ClipboardCheck className="h-4 w-4 ml-1" />
+                                  تنفيذ خطة علاج
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedAppointment(appointment);
                                     setIsResumeDialogOpen(true);
                                   }}
                                 >
@@ -852,36 +987,17 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                 <FileText className="h-4 w-4 ml-1" />
                                 تسجيل علاج
                               </Button>
-                               <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setEditingAppointment(appointment);
-                                  const scheduledDate = new Date(appointment.scheduled_at);
-                                  const formattedDate = scheduledDate.toISOString().slice(0, 16);
-                                  setNewAppointment({
-                                    patient_id: appointment.patient_id,
-                                    doctor_id: appointment.doctor_id,
-                                    scheduled_at: formattedDate,
-                                    notes: appointment.notes || "",
-                                  });
-                                  setIsDialogOpen(true);
-                                }}
-                              >
-                                <Pencil className="h-4 w-4 ml-1" />
-                                تعديل
-                              </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  if (confirm("هل أنت متأكد من حذف هذا الموعد؟")) {
-                                    deleteAppointmentMutation.mutate(appointment.id);
-                                  }
+                                  setSelectedAppointment(appointment);
+                                  setIsExecutePlanDialogOpen(true);
                                 }}
+                                className="text-blue-600 hover:text-blue-700"
                               >
-                                <Trash2 className="h-4 w-4 ml-1" />
-                                حذف
+                                <ClipboardCheck className="h-4 w-4 ml-1" />
+                                تنفيذ خطة علاج
                               </Button>
                               <Button
                                 variant="outline"
@@ -1491,6 +1607,176 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
               )}
               <p className="text-xs mt-2">معرف المريض: {selectedAppointment?.patient_id}</p>
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Execute Treatment Plan Dialog - Select Plan */}
+      <Dialog open={isExecutePlanDialogOpen} onOpenChange={setIsExecutePlanDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>تنفيذ خطة علاج</DialogTitle>
+          </DialogHeader>
+          {treatmentPlans && treatmentPlans.length > 0 ? (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                اختر خطة العلاج المراد تنفيذها لهذا الموعد
+              </p>
+              <div className="space-y-2">
+                {treatmentPlans.map((plan: any) => (
+                  <div
+                    key={plan.id}
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-accent ${
+                      selectedTreatmentPlan?.id === plan.id ? 'bg-accent border-primary' : ''
+                    }`}
+                    onClick={() => setSelectedTreatmentPlan(plan)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">{plan.treatments?.name}</p>
+                        <p className="text-sm text-muted-foreground">{plan.sub_treatments?.name}</p>
+                        <p className="text-xs text-muted-foreground mt-1">رقم السن: {plan.tooth_number}</p>
+                      </div>
+                      {selectedTreatmentPlan?.id === plan.id && (
+                        <Check className="h-5 w-5 text-primary" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {selectedTreatmentPlan && (
+                <Button
+                  onClick={() => {
+                    setIsExecutePlanDetailsDialogOpen(true);
+                    setIsExecutePlanDialogOpen(false);
+                  }}
+                  className="w-full"
+                >
+                  المتابعة لتنفيذ الخطة
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <ClipboardCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+              <p>لا توجد خطط علاج غير منفذة لهذا المريض</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Execute Treatment Plan Dialog - Details */}
+      <Dialog open={isExecutePlanDetailsDialogOpen} onOpenChange={setIsExecutePlanDetailsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>تفاصيل تنفيذ خطة العلاج</DialogTitle>
+          </DialogHeader>
+          {selectedTreatmentPlan && (
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              executePlanMutation.mutate();
+            }} className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="font-medium">{selectedTreatmentPlan.treatments?.name} - {selectedTreatmentPlan.sub_treatments?.name}</p>
+                <p className="text-sm text-muted-foreground">رقم السن: {selectedTreatmentPlan.tooth_number}</p>
+              </div>
+
+              <div>
+                <Label htmlFor="actual_cost">التكلفة الفعلية</Label>
+                <Input
+                  id="actual_cost"
+                  type="number"
+                  step="0.01"
+                  value={planExecution.actual_cost}
+                  onChange={(e) => setPlanExecution({ ...planExecution, actual_cost: e.target.value })}
+                  placeholder="أدخل التكلفة الفعلية"
+                />
+              </div>
+
+              {planTreatmentSteps && planTreatmentSteps.length > 0 && (
+                <div>
+                  <Label>خطوات العلاج</Label>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {planTreatmentSteps.map((step: any) => (
+                      <div
+                        key={step.id}
+                        className={`flex items-start space-x-2 p-3 border rounded-lg transition-colors ${
+                          selectedSteps.includes(step.id) ? 'bg-blue-50 border-blue-200' : 'bg-card'
+                        }`}
+                      >
+                        <Checkbox
+                          id={`plan-step-${step.id}`}
+                          checked={selectedSteps.includes(step.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedSteps([...selectedSteps, step.id]);
+                            } else {
+                              setSelectedSteps(selectedSteps.filter(id => id !== step.id));
+                            }
+                          }}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <Label
+                            htmlFor={`plan-step-${step.id}`}
+                            className="cursor-pointer text-sm font-medium block"
+                          >
+                            {step.step_order}. {step.step_name}
+                          </Label>
+                          {step.step_description && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {step.step_description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    اختر الخطوات المكتملة في هذا الموعد ({selectedSteps.length} محددة)
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="payment_amount">المبلغ المدفوع</Label>
+                <Input
+                  id="payment_amount"
+                  type="number"
+                  step="0.01"
+                  value={planExecution.payment_amount}
+                  onChange={(e) => setPlanExecution({ ...planExecution, payment_amount: e.target.value })}
+                  placeholder="أدخل المبلغ المدفوع (اختياري)"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="notes">ملاحظات الموعد</Label>
+                <Textarea
+                  id="notes"
+                  value={planExecution.notes}
+                  onChange={(e) => setPlanExecution({ ...planExecution, notes: e.target.value })}
+                  placeholder="أدخل ملاحظات إضافية"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button type="submit" disabled={executePlanMutation.isPending} className="flex-1">
+                  {executePlanMutation.isPending ? "جاري التنفيذ..." : "تنفيذ الخطة"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsExecutePlanDetailsDialogOpen(false);
+                    setIsExecutePlanDialogOpen(true);
+                  }}
+                >
+                  رجوع
+                </Button>
+              </div>
+            </form>
           )}
         </DialogContent>
       </Dialog>

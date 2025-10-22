@@ -356,6 +356,45 @@ export type Database = {
           },
         ]
       }
+      treatment_plans: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          executed_at: string | null
+          id: string
+          is_executed: boolean | null
+          patient_id: string
+          sub_treatment_id: string
+          tooth_number: string
+          treatment_id: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          executed_at?: string | null
+          id?: string
+          is_executed?: boolean | null
+          patient_id: string
+          sub_treatment_id: string
+          tooth_number: string
+          treatment_id: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          executed_at?: string | null
+          id?: string
+          is_executed?: boolean | null
+          patient_id?: string
+          sub_treatment_id?: string
+          tooth_number?: string
+          treatment_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       treatment_records: {
         Row: {
           actual_cost: number | null

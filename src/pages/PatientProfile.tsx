@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Calendar, CreditCard, Edit, Download, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Calendar, CreditCard, Edit, Download, Trash2, FileText } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import * as XLSX from 'xlsx';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -24,11 +24,18 @@ export default function PatientProfile() {
   const [isAppointmentDialogOpen, setIsAppointmentDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isEditPaymentDialogOpen, setIsEditPaymentDialogOpen] = useState(false);
+  const [isTreatmentPlanDialogOpen, setIsTreatmentPlanDialogOpen] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState("");
   const [activeSection, setActiveSection] = useState("all"); // "all", "appointments", "treatments", "payments"
   const [editingPayments, setEditingPayments] = useState<{[key: string]: string}>({});
   const [isDeleteTreatmentDialogOpen, setIsDeleteTreatmentDialogOpen] = useState(false);
   const [treatmentToDelete, setTreatmentToDelete] = useState<string | null>(null);
+
+  const [treatmentPlan, setTreatmentPlan] = useState({
+    treatment_id: "",
+    sub_treatment_id: "",
+    tooth_number: "",
+  });
 
   const [newAppointment, setNewAppointment] = useState({
     doctor_id: "",
@@ -62,6 +69,31 @@ export default function PatientProfile() {
       if (error) throw error;
       return data;
     },
+  });
+
+  // Fetch treatments
+  const { data: treatments } = useQuery({
+    queryKey: ["treatments"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("treatments").select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch sub-treatments
+  const { data: subTreatments } = useQuery({
+    queryKey: ["sub-treatments", treatmentPlan.treatment_id],
+    queryFn: async () => {
+      if (!treatmentPlan.treatment_id) return [];
+      const { data, error } = await supabase
+        .from("sub_treatments")
+        .select("*")
+        .eq("treatment_id", treatmentPlan.treatment_id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!treatmentPlan.treatment_id,
   });
 
   // Mutation to mark sub-treatment as completed
@@ -294,6 +326,32 @@ export default function PatientProfile() {
     createPaymentMutation.mutate(newPayment);
   };
 
+  // Create treatment plan mutation
+  const createTreatmentPlanMutation = useMutation({
+    mutationFn: async (plan: typeof treatmentPlan) => {
+      const { data, error } = await supabase
+        .from("treatment_plans")
+        .insert([{ 
+          ...plan, 
+          patient_id: patientId,
+          is_executed: false 
+        }])
+        .select();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      setIsTreatmentPlanDialogOpen(false);
+      setTreatmentPlan({ treatment_id: "", sub_treatment_id: "", tooth_number: "" });
+      toast({ title: "نجح", description: "تم إضافة خطة العلاج بنجاح" });
+    },
+  });
+
+  const handleAddTreatmentPlan = (e: React.FormEvent) => {
+    e.preventDefault();
+    createTreatmentPlanMutation.mutate(treatmentPlan);
+  };
+
   const handleExportPatientData = () => {
     // Prepare appointments data
     const appointmentsData = appointments?.map(apt => ({
@@ -517,6 +575,69 @@ export default function PatientProfile() {
                   </div>
                   <Button type="submit" disabled={createAppointmentMutation.isPending}>
                     {createAppointmentMutation.isPending ? "جاري الجدولة..." : "جدولة"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isTreatmentPlanDialogOpen} onOpenChange={setIsTreatmentPlanDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full" variant="outline">
+                  <FileText className="ml-2 h-4 w-4" />
+                  إضافة خطة علاج
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>إضافة خطة علاج</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleAddTreatmentPlan} className="space-y-4">
+                  <div>
+                    <Label htmlFor="treatment_id">العلاج</Label>
+                    <Select value={treatmentPlan.treatment_id} onValueChange={(value) => setTreatmentPlan({ ...treatmentPlan, treatment_id: value, sub_treatment_id: "" })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر علاج" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {treatments?.map((treatment) => (
+                          <SelectItem key={treatment.id} value={treatment.id}>
+                            {treatment.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="sub_treatment_id">العلاج الفرعي</Label>
+                    <Select 
+                      value={treatmentPlan.sub_treatment_id} 
+                      onValueChange={(value) => setTreatmentPlan({ ...treatmentPlan, sub_treatment_id: value })}
+                      disabled={!treatmentPlan.treatment_id}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر علاج فرعي" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subTreatments?.map((subTreatment) => (
+                          <SelectItem key={subTreatment.id} value={subTreatment.id}>
+                            {subTreatment.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="tooth_number">رقم السن</Label>
+                    <Input
+                      id="tooth_number"
+                      value={treatmentPlan.tooth_number}
+                      onChange={(e) => setTreatmentPlan({ ...treatmentPlan, tooth_number: e.target.value })}
+                      placeholder="أدخل رقم السن"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" disabled={createTreatmentPlanMutation.isPending}>
+                    {createTreatmentPlanMutation.isPending ? "جاري الإضافة..." : "إضافة"}
                   </Button>
                 </form>
               </DialogContent>
