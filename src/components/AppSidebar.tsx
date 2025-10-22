@@ -79,7 +79,7 @@ export function AppSidebar() {
             القائمة الرئيسية
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {navItems.map((item) => {
                 // Hide admin-only pages for non-super_admin users
                 if (item.adminOnly && userRole !== 'super_admin') {

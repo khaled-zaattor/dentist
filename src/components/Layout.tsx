@@ -3,6 +3,7 @@ import { Users, Calendar, FileText, Stethoscope } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface LayoutProps {
@@ -32,6 +33,7 @@ export const Layout = ({ children }: LayoutProps) => {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
           <header className="bg-card border-b px-3 py-2 sm:px-4 sm:py-4 flex items-center justify-between sticky top-0 z-10">
+            <ThemeToggle />
             <div className="flex items-center gap-2 sm:gap-3 flex-row-reverse min-w-0">
               <h2 className="text-base sm:text-lg lg:text-xl font-semibold truncate">
                 {currentPage}
