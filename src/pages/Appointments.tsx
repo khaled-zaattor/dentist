@@ -36,6 +36,7 @@ export default function Appointments() {
   const [selectedTreatmentRecord, setSelectedTreatmentRecord] = useState<any>(null);
   const [selectedTreatmentPlan, setSelectedTreatmentPlan] = useState<any>(null);
   const [openPatientCombobox, setOpenPatientCombobox] = useState(false);
+  const [patientSearchQuery, setPatientSearchQuery] = useState("");
   const [editingAppointment, setEditingAppointment] = useState<any>(null);
 
   const [planExecution, setPlanExecution] = useState({
@@ -956,18 +957,28 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0 bg-background" align="start">
-                    <Command>
-                      <CommandInput placeholder="ابحث عن مريض..." className="h-9" />
+                    <Command shouldFilter={false}>
+                      <CommandInput 
+                        placeholder="ابحث عن مريض..." 
+                        className="h-9"
+                        value={patientSearchQuery}
+                        onValueChange={setPatientSearchQuery}
+                      />
                       <CommandList>
                         <CommandEmpty>لم يتم العثور على مريض</CommandEmpty>
                         <CommandGroup>
-                          {patients?.map((patient) => (
+                          {patients
+                            ?.filter((patient) => 
+                              patient.full_name.toLowerCase().includes(patientSearchQuery.toLowerCase())
+                            )
+                            .map((patient) => (
                             <CommandItem
                               key={patient.id}
                               value={patient.full_name}
                               onSelect={() => {
                                 setNewAppointment({ ...newAppointment, patient_id: patient.id });
                                 setOpenPatientCombobox(false);
+                                setPatientSearchQuery("");
                               }}
                             >
                               {patient.full_name}
