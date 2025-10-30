@@ -963,7 +963,8 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                       className="w-full justify-between"
                     >
                       {newAppointment.patient_id
-                        ? patients?.find((patient) => patient.id === newAppointment.patient_id)?.full_name
+                        ? (editingAppointment?.patients?.full_name || 
+                           patients?.find((patient) => patient.id === newAppointment.patient_id)?.full_name)
                         : "ابحث عن مريض..."}
                       <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
