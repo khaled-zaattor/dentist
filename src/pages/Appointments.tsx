@@ -881,6 +881,17 @@ export default function Appointments() {
     return value.replace(/,/g, '');
   };
 
+  // Normalize Arabic strings for robust searching (remove diacritics/tatweel, collapse spaces, lowercase)
+  const normalizeArabic = (s: string) => {
+    return (
+      s?.toLowerCase()
+        .replace(/\u0640/g, '') // tatweel
+        .replace(/[\u064B-\u0652]/g, '') // diacritics
+        .replace(/\s+/g, ' ')
+        .trim() || ''
+    );
+  };
+
   const sendWhatsAppMessage = (appointment: any) => {
     if (!appointment.patients?.phone_number) {
       toast({
@@ -927,6 +938,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
           if (!open) {
             setEditingAppointment(null);
             setNewAppointment({ patient_id: "", doctor_id: "", scheduled_at: "", notes: "" });
+            setPatientSearchQuery("");
           }
         }}>
           <DialogTrigger asChild>
@@ -956,7 +968,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                       <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-full p-0 bg-background" align="start">
+                  <PopoverContent className="z-50 w-full p-0 bg-background" align="start">
                     <Command shouldFilter={false}>
                       <CommandInput 
                         placeholder="ابحث عن مريض..." 
@@ -964,12 +976,12 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                         value={patientSearchQuery}
                         onValueChange={setPatientSearchQuery}
                       />
-                      <CommandList>
+                      <CommandList className="max-h-72 overflow-auto">
                         <CommandEmpty>لم يتم العثور على مريض</CommandEmpty>
                         <CommandGroup>
                           {patients
                             ?.filter((patient) => 
-                              patient.full_name.toLowerCase().includes(patientSearchQuery.toLowerCase())
+                              normalizeArabic(patient.full_name).includes(normalizeArabic(patientSearchQuery))
                             )
                             .map((patient) => (
                             <CommandItem
