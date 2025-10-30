@@ -142,9 +142,15 @@ export default function Appointments() {
   });
 
   const { data: patients } = useQuery({
-    queryKey: ["patients"],
+    queryKey: ["patients", patientSearchQuery],
     queryFn: async () => {
-      const { data, error } = await supabase.from("patients").select("id, full_name");
+      let query = supabase.from("patients").select("id, full_name");
+      
+      if (patientSearchQuery) {
+        query = query.ilike("full_name", `%${patientSearchQuery}%`);
+      }
+      
+      const { data, error } = await query.order("full_name");
       if (error) throw error;
       return data;
     },
@@ -881,16 +887,6 @@ export default function Appointments() {
     return value.replace(/,/g, '');
   };
 
-  // Normalize Arabic strings for robust searching (remove diacritics/tatweel, collapse spaces, lowercase)
-  const normalizeArabic = (s: string) => {
-    return (
-      s?.toLowerCase()
-        .replace(/\u0640/g, '') // tatweel
-        .replace(/[\u064B-\u0652]/g, '') // diacritics
-        .replace(/\s+/g, ' ')
-        .trim() || ''
-    );
-  };
 
   const sendWhatsAppMessage = (appointment: any) => {
     if (!appointment.patients?.phone_number) {
@@ -980,11 +976,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                       <CommandList className="max-h-72 overflow-auto">
                         <CommandEmpty>لم يتم العثور على مريض</CommandEmpty>
                         <CommandGroup>
-                          {patients
-                            ?.filter((patient) => 
-                              normalizeArabic(patient.full_name).includes(normalizeArabic(patientSearchQuery))
-                            )
-                            .map((patient) => (
+                          {patients?.map((patient) => (
                             <CommandItem
                               key={patient.id}
                               value={patient.full_name}
