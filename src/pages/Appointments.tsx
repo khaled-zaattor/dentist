@@ -356,7 +356,13 @@ export default function Appointments() {
 
   const createAppointmentMutation = useMutation({
     mutationFn: async (appointment: typeof newAppointment) => {
-      const { data, error } = await supabase.from("appointments").insert([appointment]).select();
+      // Convert local datetime to ISO string for proper timezone handling
+      const scheduledDate = new Date(appointment.scheduled_at);
+      const appointmentData = {
+        ...appointment,
+        scheduled_at: scheduledDate.toISOString()
+      };
+      const { data, error } = await supabase.from("appointments").insert([appointmentData]).select();
       if (error) throw error;
       return data;
     },
@@ -370,12 +376,14 @@ export default function Appointments() {
 
   const updateAppointmentMutation = useMutation({
     mutationFn: async (appointment: typeof newAppointment & { id: string }) => {
+      // Convert local datetime to ISO string for proper timezone handling
+      const scheduledDate = new Date(appointment.scheduled_at);
       const { data, error } = await supabase
         .from("appointments")
         .update({
           patient_id: appointment.patient_id,
           doctor_id: appointment.doctor_id,
-          scheduled_at: appointment.scheduled_at,
+          scheduled_at: scheduledDate.toISOString(),
           notes: appointment.notes,
         })
         .eq("id", appointment.id)
@@ -925,6 +933,17 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
     window.open(whatsappUrl, '_blank');
   };
 
+  // Helper function to convert UTC date to local datetime-local format
+  const formatDateForInput = (utcDateString: string) => {
+    const date = new Date(utcDateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -1254,12 +1273,10 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                             <DropdownMenuItem
                               onClick={() => {
                                 setEditingAppointment(appointment);
-                                const scheduledDate = new Date(appointment.scheduled_at);
-                                const formattedDate = scheduledDate.toISOString().slice(0, 16);
                                 setNewAppointment({
                                   patient_id: appointment.patient_id,
                                   doctor_id: appointment.doctor_id,
-                                  scheduled_at: formattedDate,
+                                  scheduled_at: formatDateForInput(appointment.scheduled_at),
                                   notes: appointment.notes || "",
                                 });
                                 setIsDialogOpen(true);
@@ -2198,12 +2215,10 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                   className="justify-start"
                   onClick={() => {
                     setEditingAppointment(selectedAppointment);
-                    const scheduledDate = new Date(selectedAppointment.scheduled_at);
-                    const formattedDate = scheduledDate.toISOString().slice(0, 16);
                     setNewAppointment({
                       patient_id: selectedAppointment.patient_id,
                       doctor_id: selectedAppointment.doctor_id,
-                      scheduled_at: formattedDate,
+                      scheduled_at: formatDateForInput(selectedAppointment.scheduled_at),
                       notes: selectedAppointment.notes || "",
                     });
                     setIsDialogOpen(true);
