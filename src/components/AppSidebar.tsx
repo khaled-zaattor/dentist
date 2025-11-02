@@ -21,7 +21,7 @@ const navItems = [
   { path: "/patients", label: "المرضى", icon: Users, allowedRoles: ['super_admin', 'doctor', 'dentist_assistant'] },
   { path: "/doctors", label: "الأطباء", icon: UserCheck, allowedRoles: ['super_admin', 'doctor', 'dentist_assistant'] },
   { path: "/appointments", label: "المواعيد", icon: Calendar, allowedRoles: ['super_admin', 'doctor', 'dentist_assistant'] },
-  { path: "/treatments", label: "العلاجات", icon: FileText, allowedRoles: ['super_admin', 'doctor', 'dentist_assistant'] },
+  { path: "/treatments", label: "العلاجات", icon: FileText, allowedRoles: ['super_admin', 'doctor'] },
   { path: "/waiting-list-management", label: "إدارة لائحة الانتظار", icon: ListChecks, allowedRoles: ['super_admin', 'doctor', 'dentist_assistant', 'receptionist'] },
   { path: "/waiting-list-display", label: "عرض لائحة الانتظار", icon: MonitorPlay, allowedRoles: ['super_admin', 'doctor', 'dentist_assistant', 'receptionist'] },
   { path: "/activity-logs", label: "سجل النشاطات", icon: FileSpreadsheet, allowedRoles: ['super_admin'] },
