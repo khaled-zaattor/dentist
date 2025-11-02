@@ -17,15 +17,15 @@ import {
 } from "@/components/ui/sidebar";
 
 const navItems = [
-  { path: "/", label: "لوحة التحكم", icon: Stethoscope, adminOnly: false },
-  { path: "/patients", label: "المرضى", icon: Users, adminOnly: false },
-  { path: "/doctors", label: "الأطباء", icon: UserCheck, adminOnly: false },
-  { path: "/appointments", label: "المواعيد", icon: Calendar, adminOnly: false },
-  { path: "/treatments", label: "العلاجات", icon: FileText, adminOnly: false },
-  { path: "/waiting-list-management", label: "إدارة لائحة الانتظار", icon: ListChecks, adminOnly: false },
-  { path: "/waiting-list-display", label: "عرض لائحة الانتظار", icon: MonitorPlay, adminOnly: false },
-  { path: "/activity-logs", label: "سجل النشاطات", icon: FileSpreadsheet, adminOnly: true },
-  { path: "/admin", label: "إدارة النظام", icon: Settings, adminOnly: true },
+  { path: "/", label: "لوحة التحكم", icon: Stethoscope, allowedRoles: ['super_admin'] },
+  { path: "/patients", label: "المرضى", icon: Users, allowedRoles: ['super_admin', 'doctor', 'dentist_assistant'] },
+  { path: "/doctors", label: "الأطباء", icon: UserCheck, allowedRoles: ['super_admin', 'doctor', 'dentist_assistant'] },
+  { path: "/appointments", label: "المواعيد", icon: Calendar, allowedRoles: ['super_admin', 'doctor', 'dentist_assistant'] },
+  { path: "/treatments", label: "العلاجات", icon: FileText, allowedRoles: ['super_admin', 'doctor', 'dentist_assistant'] },
+  { path: "/waiting-list-management", label: "إدارة لائحة الانتظار", icon: ListChecks, allowedRoles: ['super_admin', 'doctor', 'dentist_assistant', 'receptionist'] },
+  { path: "/waiting-list-display", label: "عرض لائحة الانتظار", icon: MonitorPlay, allowedRoles: ['super_admin', 'doctor', 'dentist_assistant', 'receptionist'] },
+  { path: "/activity-logs", label: "سجل النشاطات", icon: FileSpreadsheet, allowedRoles: ['super_admin'] },
+  { path: "/admin", label: "إدارة النظام", icon: Settings, allowedRoles: ['super_admin'] },
 ];
 
 export function AppSidebar() {
@@ -81,8 +81,8 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
               {navItems.map((item) => {
-                // Hide admin-only pages for non-super_admin users
-                if (item.adminOnly && userRole !== 'super_admin') {
+                // Show menu item only if user role is in allowedRoles
+                if (!userRole || !item.allowedRoles.includes(userRole)) {
                   return null;
                 }
                 
