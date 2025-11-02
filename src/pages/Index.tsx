@@ -1,10 +1,10 @@
 import { Layout } from "@/components/Layout";
-import Dashboard from "./Dashboard";
+import AdminDashboard from "./AdminDashboard";
 
 const Index = () => {
   return (
     <Layout>
-      <Dashboard />
+      <AdminDashboard />
     </Layout>
   );
 };
