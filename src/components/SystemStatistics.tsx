@@ -62,7 +62,7 @@ export function SystemStatistics() {
         treatmentsCount: treatments.count || 0,
         treatmentCost: totalTreatmentCost,
         totalPayments: totalPayments,
-        totalRevenue: totalPayments,
+        totalRevenue: totalPayments - totalTreatmentCost,
       };
     },
   });
