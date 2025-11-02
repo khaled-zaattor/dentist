@@ -49,7 +49,8 @@ export default function Appointments() {
 
   // Filter states
   const [filterDoctor, setFilterDoctor] = useState("");
-  const [filterDate, setFilterDate] = useState("");
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterPatientName, setFilterPatientName] = useState("");
   const [debouncedPatientName, setDebouncedPatientName] = useState("");
@@ -95,7 +96,7 @@ export default function Appointments() {
   }, [isRecordDialogOpen, selectedAppointment]);
 
   const { data: appointments, isLoading } = useQuery({
-    queryKey: ["appointments", filterDoctor, filterDate, filterStatus, debouncedPatientName],
+    queryKey: ["appointments", filterDoctor, filterStartDate, filterEndDate, filterStatus, debouncedPatientName],
     queryFn: async () => {
       let query = supabase
         .from("appointments")
@@ -110,16 +111,26 @@ export default function Appointments() {
         query = query.eq("doctor_id", filterDoctor);
       }
 
-      // Apply date filter
-      if (filterDate) {
-        const startOfDay = new Date(filterDate);
+      // Apply date range filter
+      if (filterStartDate && filterEndDate) {
+        const startOfDay = new Date(filterStartDate);
         startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(filterDate);
+        const endOfDay = new Date(filterEndDate);
         endOfDay.setHours(23, 59, 59, 999);
 
         query = query
           .gte("scheduled_at", startOfDay.toISOString())
           .lte("scheduled_at", endOfDay.toISOString());
+      } else if (filterStartDate) {
+        // If only start date is selected, filter from that date onwards
+        const startOfDay = new Date(filterStartDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        query = query.gte("scheduled_at", startOfDay.toISOString());
+      } else if (filterEndDate) {
+        // If only end date is selected, filter up to that date
+        const endOfDay = new Date(filterEndDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        query = query.lte("scheduled_at", endOfDay.toISOString());
       }
 
       // Apply status filter
@@ -1103,12 +1114,24 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                 <TableRow>
                   <TableHead>
                     <div className="space-y-2">
-                      <span>التاريخ والوقت</span>
+                      <span>التاريخ من</span>
                       <Input
                         type="date"
-                        value={filterDate}
-                        onChange={(e) => setFilterDate(e.target.value)}
-                        placeholder="فلترة بالتاريخ"
+                        value={filterStartDate}
+                        onChange={(e) => setFilterStartDate(e.target.value)}
+                        placeholder="التاريخ من"
+                        className="text-xs"
+                      />
+                    </div>
+                  </TableHead>
+                  <TableHead>
+                    <div className="space-y-2">
+                      <span>التاريخ إلى</span>
+                      <Input
+                        type="date"
+                        value={filterEndDate}
+                        onChange={(e) => setFilterEndDate(e.target.value)}
+                        placeholder="التاريخ إلى"
                         className="text-xs"
                       />
                     </div>
@@ -1162,14 +1185,15 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                   <TableHead className="hidden lg:table-cell">ملاحظات</TableHead>
                   <TableHead className="hidden lg:table-cell">الإجراءات</TableHead>
                 </TableRow>
-                {(filterDate || filterDoctor !== "" && filterDoctor !== "all" || filterStatus !== "" && filterStatus !== "all" || filterPatientName) && (
+                {(filterStartDate || filterEndDate || filterDoctor !== "" && filterDoctor !== "all" || filterStatus !== "" && filterStatus !== "all" || filterPatientName) && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-2">
+                    <TableCell colSpan={7} className="text-center py-2">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          setFilterDate("");
+                          setFilterStartDate("");
+                          setFilterEndDate("");
                           setFilterDoctor("");
                           setFilterStatus("");
                           setFilterPatientName("");
