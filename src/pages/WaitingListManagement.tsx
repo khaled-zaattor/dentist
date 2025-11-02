@@ -586,9 +586,9 @@ export default function WaitingListManagement() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>الزيارات المنتهية اليوم</CardTitle>
             <Button 
-              variant="outline" 
               size="sm"
               onClick={exportToExcelAndDelete}
+              className="bg-primary hover:bg-primary/90"
             >
               <FileSpreadsheet className="ml-2 h-4 w-4" />
               تصدير وحذف ({completedList.length})

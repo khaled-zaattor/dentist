@@ -1151,10 +1151,10 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
           <CardTitle>قائمة المواعيد</CardTitle>
           <div className="flex gap-2">
             <Button
-              variant="outline"
               size="sm"
               onClick={() => setIsExportColumnsDialogOpen(true)}
               title="تصدير إلى Excel"
+              className="bg-primary hover:bg-primary/90"
             >
               <Download className="h-4 w-4 ml-2" />
               تصدير

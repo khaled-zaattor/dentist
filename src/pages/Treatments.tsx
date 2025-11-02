@@ -470,11 +470,10 @@ export default function Treatments() {
               </Button>
             </div>
             <Button
-              variant="outline"
               size="sm"
               onClick={exportToExcel}
               disabled={!treatments || treatments.length === 0}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90"
             >
               <FileDown className="ml-2 h-4 w-4" />
               تصدير إلى إكسل
