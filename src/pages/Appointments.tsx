@@ -30,6 +30,7 @@ export default function Appointments() {
   const [isResumeDialogOpen, setIsResumeDialogOpen] = useState(false);
   const [isExecutePlanDialogOpen, setIsExecutePlanDialogOpen] = useState(false);
   const [isExecutePlanDetailsDialogOpen, setIsExecutePlanDetailsDialogOpen] = useState(false);
+  const [isExportColumnsDialogOpen, setIsExportColumnsDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [selectedSteps, setSelectedSteps] = useState<string[]>([]);
@@ -38,6 +39,21 @@ export default function Appointments() {
   const [openPatientCombobox, setOpenPatientCombobox] = useState(false);
   const [patientSearchQuery, setPatientSearchQuery] = useState("");
   const [editingAppointment, setEditingAppointment] = useState<any>(null);
+
+  const availableColumns = [
+    { id: 'patient_name', label: 'اسم المريض' },
+    { id: 'phone_number', label: 'رقم الهاتف' },
+    { id: 'doctor_name', label: 'الطبيب' },
+    { id: 'specialty', label: 'التخصص' },
+    { id: 'date', label: 'التاريخ' },
+    { id: 'time', label: 'الوقت' },
+    { id: 'status', label: 'الحالة' },
+    { id: 'notes', label: 'ملاحظات' }
+  ];
+
+  const [selectedColumns, setSelectedColumns] = useState<string[]>(
+    availableColumns.map(col => col.id)
+  );
 
   const [planExecution, setPlanExecution] = useState({
     actual_cost: "",
@@ -749,16 +765,45 @@ export default function Appointments() {
       return;
     }
 
-    const exportData = appointments.map(apt => ({
-      'اسم المريض': apt.patients?.full_name || '',
-      'رقم الهاتف': apt.patients?.phone_number || '',
-      'الطبيب': apt.doctors?.full_name || '',
-      'التخصص': apt.doctors?.specialty || '',
-      'التاريخ': new Date(apt.scheduled_at).toLocaleDateString('ar-EG'),
-      'الوقت': new Date(apt.scheduled_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-      'الحالة': apt.status,
-      'ملاحظات': apt.notes || ''
-    }));
+    if (selectedColumns.length === 0) {
+      toast({ 
+        title: "لا توجد أعمدة محددة", 
+        description: "يرجى اختيار عمود واحد على الأقل للتصدير",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const exportData = appointments.map(apt => {
+      const row: any = {};
+      
+      if (selectedColumns.includes('patient_name')) {
+        row['اسم المريض'] = apt.patients?.full_name || '';
+      }
+      if (selectedColumns.includes('phone_number')) {
+        row['رقم الهاتف'] = apt.patients?.phone_number || '';
+      }
+      if (selectedColumns.includes('doctor_name')) {
+        row['الطبيب'] = apt.doctors?.full_name || '';
+      }
+      if (selectedColumns.includes('specialty')) {
+        row['التخصص'] = apt.doctors?.specialty || '';
+      }
+      if (selectedColumns.includes('date')) {
+        row['التاريخ'] = new Date(apt.scheduled_at).toLocaleDateString('ar-EG');
+      }
+      if (selectedColumns.includes('time')) {
+        row['الوقت'] = new Date(apt.scheduled_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+      }
+      if (selectedColumns.includes('status')) {
+        row['الحالة'] = apt.status;
+      }
+      if (selectedColumns.includes('notes')) {
+        row['ملاحظات'] = apt.notes || '';
+      }
+      
+      return row;
+    });
 
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
@@ -772,6 +817,8 @@ export default function Appointments() {
       title: "نجح", 
       description: "تم تصدير المواعيد إلى Excel بنجاح" 
     });
+
+    setIsExportColumnsDialogOpen(false);
   };
 
   const handleImportFromExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1081,7 +1128,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
             <Button
               variant="outline"
               size="sm"
-              onClick={handleExportToExcel}
+              onClick={() => setIsExportColumnsDialogOpen(true)}
               title="تصدير إلى Excel"
             >
               <Download className="h-4 w-4 ml-2" />
@@ -2268,6 +2315,70 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Columns Selection Dialog */}
+      <Dialog open={isExportColumnsDialogOpen} onOpenChange={setIsExportColumnsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>اختر الأعمدة للتصدير</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-3">
+              {availableColumns.map((column) => (
+                <div key={column.id} className="flex items-center space-x-2 space-x-reverse">
+                  <Checkbox
+                    id={column.id}
+                    checked={selectedColumns.includes(column.id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedColumns([...selectedColumns, column.id]);
+                      } else {
+                        setSelectedColumns(selectedColumns.filter(id => id !== column.id));
+                      }
+                    }}
+                  />
+                  <Label
+                    htmlFor={column.id}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    {column.label}
+                  </Label>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex justify-between gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (selectedColumns.length === availableColumns.length) {
+                    setSelectedColumns([]);
+                  } else {
+                    setSelectedColumns(availableColumns.map(col => col.id));
+                  }
+                }}
+              >
+                {selectedColumns.length === availableColumns.length ? 'إلغاء الكل' : 'تحديد الكل'}
+              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsExportColumnsDialogOpen(false)}
+                >
+                  إلغاء
+                </Button>
+                <Button
+                  onClick={handleExportToExcel}
+                  disabled={selectedColumns.length === 0}
+                >
+                  <Download className="h-4 w-4 ml-2" />
+                  تصدير
+                </Button>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
