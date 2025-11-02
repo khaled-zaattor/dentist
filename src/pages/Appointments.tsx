@@ -774,40 +774,65 @@ export default function Appointments() {
       return;
     }
 
-    const exportData = appointments.map(apt => {
-      const row: any = {};
-      
-      if (selectedColumns.includes('patient_name')) {
-        row['اسم المريض'] = apt.patients?.full_name || '';
+    // Group appointments by date
+    const appointmentsByDate: { [key: string]: any[] } = {};
+    
+    appointments.forEach(apt => {
+      const date = new Date(apt.scheduled_at).toLocaleDateString('ar-EG');
+      if (!appointmentsByDate[date]) {
+        appointmentsByDate[date] = [];
       }
-      if (selectedColumns.includes('phone_number')) {
-        row['رقم الهاتف'] = apt.patients?.phone_number || '';
-      }
-      if (selectedColumns.includes('doctor_name')) {
-        row['الطبيب'] = apt.doctors?.full_name || '';
-      }
-      if (selectedColumns.includes('specialty')) {
-        row['التخصص'] = apt.doctors?.specialty || '';
-      }
-      if (selectedColumns.includes('date')) {
-        row['التاريخ'] = new Date(apt.scheduled_at).toLocaleDateString('ar-EG');
-      }
-      if (selectedColumns.includes('time')) {
-        row['الوقت'] = new Date(apt.scheduled_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-      }
-      if (selectedColumns.includes('status')) {
-        row['الحالة'] = apt.status;
-      }
-      if (selectedColumns.includes('notes')) {
-        row['ملاحظات'] = apt.notes || '';
-      }
-      
-      return row;
+      appointmentsByDate[date].push(apt);
     });
 
-    const ws = XLSX.utils.json_to_sheet(exportData);
+    // Create workbook
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'المواعيد');
+
+    // Create a sheet for each date
+    Object.keys(appointmentsByDate).sort((a, b) => {
+      const dateA = new Date(appointmentsByDate[a][0].scheduled_at);
+      const dateB = new Date(appointmentsByDate[b][0].scheduled_at);
+      return dateB.getTime() - dateA.getTime();
+    }).forEach(date => {
+      const dayAppointments = appointmentsByDate[date];
+      
+      const exportData = dayAppointments.map(apt => {
+        const row: any = {};
+        
+        if (selectedColumns.includes('patient_name')) {
+          row['اسم المريض'] = apt.patients?.full_name || '';
+        }
+        if (selectedColumns.includes('phone_number')) {
+          row['رقم الهاتف'] = apt.patients?.phone_number || '';
+        }
+        if (selectedColumns.includes('doctor_name')) {
+          row['الطبيب'] = apt.doctors?.full_name || '';
+        }
+        if (selectedColumns.includes('specialty')) {
+          row['التخصص'] = apt.doctors?.specialty || '';
+        }
+        if (selectedColumns.includes('date')) {
+          row['التاريخ'] = new Date(apt.scheduled_at).toLocaleDateString('ar-EG');
+        }
+        if (selectedColumns.includes('time')) {
+          row['الوقت'] = new Date(apt.scheduled_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        }
+        if (selectedColumns.includes('status')) {
+          row['الحالة'] = apt.status;
+        }
+        if (selectedColumns.includes('notes')) {
+          row['ملاحظات'] = apt.notes || '';
+        }
+        
+        return row;
+      });
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      
+      // Create a safe sheet name (max 31 chars, no special chars)
+      const sheetName = date.substring(0, 31).replace(/[:\\/?*\[\]]/g, '-');
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
     
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -815,7 +840,7 @@ export default function Appointments() {
     
     toast({ 
       title: "نجح", 
-      description: "تم تصدير المواعيد إلى Excel بنجاح" 
+      description: `تم تصدير ${Object.keys(appointmentsByDate).length} يوم من المواعيد إلى Excel بنجاح` 
     });
 
     setIsExportColumnsDialogOpen(false);
