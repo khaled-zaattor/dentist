@@ -1624,7 +1624,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
 
                       <div>
                         <div className="flex gap-0.5 justify-center items-center">
-                          {[31, 32, 33, 34, 35, 36, 37, 38].map((toothNum) => (
+                          {[48, 47, 46, 45, 44, 43, 42, 41].map((toothNum) => (
                             <button
                               key={toothNum}
                               type="button"
@@ -1648,7 +1648,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                             </button>
                           ))}
                           <div className="w-px h-[25px] bg-border mx-0.5" />
-                          {[48, 47, 46, 45, 44, 43, 42, 41].map((toothNum) => (
+                          {[31, 32, 33, 34, 35, 36, 37, 38].map((toothNum) => (
                             <button
                               key={toothNum}
                               type="button"
@@ -1733,7 +1733,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
 
                       <div>
                         <div className="flex gap-0.5 justify-center items-center">
-                          {[71, 72, 73, 74, 75].map((toothNum) => (
+                          {[85, 84, 83, 82, 81].map((toothNum) => (
                             <button
                               key={toothNum}
                               type="button"
@@ -1757,7 +1757,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                             </button>
                           ))}
                           <div className="w-px h-[25px] bg-border mx-0.5" />
-                          {[85, 84, 83, 82, 81].map((toothNum) => (
+                          {[71, 72, 73, 74, 75].map((toothNum) => (
                             <button
                               key={toothNum}
                               type="button"
