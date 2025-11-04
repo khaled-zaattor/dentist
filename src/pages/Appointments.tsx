@@ -1567,7 +1567,6 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                     <>
                       {/* أسنان البالغين */}
                       <div className="mb-2">
-                        <div className="text-xs text-center text-muted-foreground mb-0.5">الفك العلوي</div>
                         <div className="flex gap-0.5 justify-center items-center">
                           {[18, 17, 16, 15, 14, 13, 12, 11].map((toothNum) => (
                             <button
@@ -1586,7 +1585,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                   setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
                                 }
                               }}
-                              className={`h-5 w-5 text-[10px] font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-background hover:bg-muted border-border'
                                 }`}
@@ -1594,7 +1593,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                               {toothNum}
                             </button>
                           ))}
-                          <div className="w-px h-5 bg-border mx-0.5" />
+                          <div className="w-px h-[25px] bg-border mx-0.5" />
                           {[21, 22, 23, 24, 25, 26, 27, 28].map((toothNum) => (
                             <button
                               key={toothNum}
@@ -1610,7 +1609,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                   setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
                                 }
                               }}
-                              className={`h-5 w-5 text-[10px] font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-background hover:bg-muted border-border'
                                 }`}
@@ -1621,8 +1620,9 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                         </div>
                       </div>
 
+                      <div className="h-px bg-border my-2" />
+
                       <div>
-                        <div className="text-xs text-center text-muted-foreground mb-0.5">الفك السفلي</div>
                         <div className="flex gap-0.5 justify-center items-center">
                           {[31, 32, 33, 34, 35, 36, 37, 38].map((toothNum) => (
                             <button
@@ -1639,7 +1639,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                   setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
                                 }
                               }}
-                              className={`h-5 w-5 text-[10px] font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-background hover:bg-muted border-border'
                                 }`}
@@ -1647,7 +1647,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                               {toothNum}
                             </button>
                           ))}
-                          <div className="w-px h-5 bg-border mx-0.5" />
+                          <div className="w-px h-[25px] bg-border mx-0.5" />
                           {[48, 47, 46, 45, 44, 43, 42, 41].map((toothNum) => (
                             <button
                               key={toothNum}
@@ -1663,7 +1663,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                   setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
                                 }
                               }}
-                              className={`h-5 w-5 text-[10px] font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-background hover:bg-muted border-border'
                                 }`}
@@ -1678,7 +1678,6 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                     <>
                       {/* أسنان الأطفال */}
                       <div className="mb-2">
-                        <div className="text-xs text-center text-muted-foreground mb-0.5">الفك العلوي</div>
                         <div className="flex gap-0.5 justify-center items-center">
                           {[55, 54, 53, 52, 51].map((toothNum) => (
                             <button
@@ -1695,7 +1694,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                   setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
                                 }
                               }}
-                              className={`h-5 w-5 text-[10px] font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-background hover:bg-muted border-border'
                                 }`}
@@ -1703,7 +1702,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                               {toothNum}
                             </button>
                           ))}
-                          <div className="w-px h-5 bg-border mx-0.5" />
+                          <div className="w-px h-[25px] bg-border mx-0.5" />
                           {[61, 62, 63, 64, 65].map((toothNum) => (
                             <button
                               key={toothNum}
@@ -1719,7 +1718,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                   setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
                                 }
                               }}
-                              className={`h-5 w-5 text-[10px] font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-background hover:bg-muted border-border'
                                 }`}
@@ -1730,8 +1729,9 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                         </div>
                       </div>
 
+                      <div className="h-px bg-border my-2" />
+
                       <div>
-                        <div className="text-xs text-center text-muted-foreground mb-0.5">الفك السفلي</div>
                         <div className="flex gap-0.5 justify-center items-center">
                           {[71, 72, 73, 74, 75].map((toothNum) => (
                             <button
@@ -1748,7 +1748,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                   setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
                                 }
                               }}
-                              className={`h-5 w-5 text-[10px] font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-background hover:bg-muted border-border'
                                 }`}
@@ -1756,7 +1756,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                               {toothNum}
                             </button>
                           ))}
-                          <div className="w-px h-5 bg-border mx-0.5" />
+                          <div className="w-px h-[25px] bg-border mx-0.5" />
                           {[85, 84, 83, 82, 81].map((toothNum) => (
                             <button
                               key={toothNum}
@@ -1772,7 +1772,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                   setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
                                 }
                               }}
-                              className={`h-5 w-5 text-[10px] font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-background hover:bg-muted border-border'
                                 }`}
