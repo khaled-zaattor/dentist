@@ -22,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import { format } from "date-fns";
 
 export default function Appointments() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -778,7 +779,7 @@ export default function Appointments() {
     const appointmentsByDate: { [key: string]: any[] } = {};
     
     appointments.forEach(apt => {
-      const date = new Date(apt.scheduled_at).toLocaleDateString('ar-EG');
+      const date = format(new Date(apt.scheduled_at), 'dd/MM/yyyy');
       if (!appointmentsByDate[date]) {
         appointmentsByDate[date] = [];
       }
@@ -812,7 +813,7 @@ export default function Appointments() {
           row['التخصص'] = apt.doctors?.specialty || '';
         }
         if (selectedColumns.includes('date')) {
-          row['التاريخ'] = new Date(apt.scheduled_at).toLocaleDateString('ar-EG');
+          row['التاريخ'] = format(new Date(apt.scheduled_at), 'dd/MM/yyyy');
         }
         if (selectedColumns.includes('time')) {
           row['الوقت'] = new Date(apt.scheduled_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
@@ -990,7 +991,7 @@ export default function Appointments() {
     }
 
     const appointmentDate = new Date(appointment.scheduled_at);
-    const formattedDate = appointmentDate.toLocaleDateString('ar-SA');
+    const formattedDate = format(appointmentDate, 'dd/MM/yyyy');
     const formattedTime = appointmentDate.toLocaleTimeString('ar-SA', {
       hour: '2-digit',
       minute: '2-digit'
@@ -2205,7 +2206,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
               <div className="grid grid-cols-2 gap-3 text-sm p-3 bg-muted/50 rounded-lg">
                 <div><span className="font-medium">المريض:</span> {selectedAppointment.patients?.full_name}</div>
                 <div><span className="font-medium">الطبيب:</span> {selectedAppointment.doctors?.full_name}</div>
-                <div><span className="font-medium">التاريخ:</span> {new Date(selectedAppointment.scheduled_at).toLocaleDateString('ar')}</div>
+                <div><span className="font-medium">التاريخ:</span> {format(new Date(selectedAppointment.scheduled_at), 'dd/MM/yyyy')}</div>
                 <div><span className="font-medium">الوقت:</span> {new Date(selectedAppointment.scheduled_at).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}</div>
                 <div className="col-span-2">
                   <span className="font-medium">الحالة:</span>{" "}

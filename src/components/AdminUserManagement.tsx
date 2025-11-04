@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { Shield, Users, Lock, UserPlus } from "lucide-react";
+import { format } from "date-fns";
 
 interface UserProfile {
   id: string;
@@ -213,7 +214,7 @@ export function AdminUserManagement() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {new Date(user.created_at).toLocaleDateString('ar-SA')}
+                    {format(new Date(user.created_at), 'dd/MM/yyyy')}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">

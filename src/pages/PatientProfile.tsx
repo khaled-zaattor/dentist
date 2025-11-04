@@ -15,6 +15,7 @@ import * as XLSX from 'xlsx';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 export default function PatientProfile() {
   const { patientId } = useParams();
@@ -357,7 +358,7 @@ export default function PatientProfile() {
   const handleExportPatientData = () => {
     // Prepare appointments data
     const appointmentsData = appointments?.map(apt => ({
-      'التاريخ': new Date(apt.scheduled_at).toLocaleDateString('ar-EG'),
+      'التاريخ': format(new Date(apt.scheduled_at), 'dd/MM/yyyy'),
       'الوقت': new Date(apt.scheduled_at).toLocaleTimeString('ar-EG'),
       'الطبيب': apt.doctors?.full_name || '',
       'الحالة': apt.status === 'Completed' ? 'مكتمل' : apt.status === 'Scheduled' ? 'مجدول' : 'ملغي',
@@ -366,7 +367,7 @@ export default function PatientProfile() {
 
     // Prepare treatments data
     const treatmentsData = allTreatmentRecords?.map(record => ({
-      'التاريخ': new Date((record.appointments as any)?.scheduled_at).toLocaleDateString('ar-EG'),
+      'التاريخ': format(new Date((record.appointments as any)?.scheduled_at), 'dd/MM/yyyy'),
       'الطبيب': (record.appointments as any)?.doctors?.full_name || '',
       'العلاج': record.treatments?.name || '',
       'الإجراء الفرعي': record.sub_treatments?.name || '',
@@ -377,9 +378,9 @@ export default function PatientProfile() {
 
     // Prepare payments data
     const paymentsData = allPayments?.map(payment => ({
-      'التاريخ': new Date(payment.paid_at).toLocaleDateString('ar-EG'),
+      'التاريخ': format(new Date(payment.paid_at), 'dd/MM/yyyy'),
       'المبلغ': Math.round(payment.amount),
-      'الموعد': new Date((payment.appointments as any)?.scheduled_at).toLocaleDateString('ar-EG'),
+      'الموعد': format(new Date((payment.appointments as any)?.scheduled_at), 'dd/MM/yyyy'),
       'الطبيب': (payment.appointments as any)?.doctors?.full_name || ''
     })) || [];
 
@@ -400,7 +401,7 @@ export default function PatientProfile() {
     // Add patient info sheet
     const patientInfo = [{
       'الاسم': patient.full_name,
-      'تاريخ الميلاد': new Date(patient.date_of_birth).toLocaleDateString('ar-EG'),
+      'تاريخ الميلاد': format(new Date(patient.date_of_birth), 'dd/MM/yyyy'),
       'الهاتف': patient.phone_number,
       'جهة الاتصال': patient.contact || '-',
       'الملاحظات الطبية': patient.medical_notes || '-'
@@ -495,7 +496,7 @@ export default function PatientProfile() {
           </CardHeader>
           <CardContent className="space-y-2">
             <div>
-              <strong>تاريخ الميلاد:</strong> {new Date(patient.date_of_birth).toLocaleDateString()}
+              <strong>تاريخ الميلاد:</strong> {format(new Date(patient.date_of_birth), 'dd/MM/yyyy')}
             </div>
             <div>
               <strong>الهاتف:</strong> {patient.phone_number}
@@ -989,7 +990,7 @@ export default function PatientProfile() {
                 {appointments?.map((appointment) => (
                   <TableRow key={appointment.id}>
                     <TableCell>
-                      {new Date(appointment.scheduled_at).toLocaleDateString()}
+                      {format(new Date(appointment.scheduled_at), 'dd/MM/yyyy')}
                     </TableCell>
                     <TableCell>{appointment.doctors?.full_name}</TableCell>
                     <TableCell>
@@ -1012,7 +1013,7 @@ export default function PatientProfile() {
                     <TableCell>
                       {appointment.payments?.map((payment, index) => (
                         <div key={index} className="text-sm">
-                          {Math.round(payment.amount).toLocaleString('en-US')} on {new Date(payment.paid_at).toLocaleDateString()}
+                          {Math.round(payment.amount).toLocaleString('en-US')} on {format(new Date(payment.paid_at), 'dd/MM/yyyy')}
                         </div>
                       ))}
                     </TableCell>
@@ -1107,7 +1108,7 @@ export default function PatientProfile() {
                   {appointmentPayments.map((payment) => (
                     <TableRow key={payment.id}>
                       <TableCell>
-                        {new Date(payment.paid_at).toLocaleDateString()}
+                        {format(new Date(payment.paid_at), 'dd/MM/yyyy')}
                       </TableCell>
                       <TableCell className="font-semibold">
                         {Math.round(payment.amount).toLocaleString('en-US')}
@@ -1182,7 +1183,7 @@ export default function PatientProfile() {
                   {allTreatmentRecords.map((record) => (
                     <TableRow key={record.id}>
                       <TableCell>
-                        {new Date(record.appointments?.scheduled_at).toLocaleDateString()}
+                        {format(new Date(record.appointments?.scheduled_at), 'dd/MM/yyyy')}
                       </TableCell>
                       <TableCell>{record.treatments?.name}</TableCell>
                       <TableCell>{record.sub_treatments?.name}</TableCell>
@@ -1310,13 +1311,13 @@ export default function PatientProfile() {
                     {allPayments.map((payment) => (
                       <TableRow key={payment.id}>
                         <TableCell>
-                          {new Date(payment.paid_at).toLocaleDateString()}
+                          {format(new Date(payment.paid_at), 'dd/MM/yyyy')}
                         </TableCell>
                         <TableCell className="font-semibold text-green-600">
                           {Math.round(payment.amount).toLocaleString('en-US')}
                         </TableCell>
                         <TableCell>
-                          {new Date(payment.appointments?.scheduled_at).toLocaleDateString()}
+                          {format(new Date(payment.appointments?.scheduled_at), 'dd/MM/yyyy')}
                         </TableCell>
                         <TableCell>
                           {payment.appointments?.doctors?.full_name || '-'}

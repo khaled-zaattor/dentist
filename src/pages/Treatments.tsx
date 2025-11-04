@@ -14,6 +14,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { format } from "date-fns";
 
 export default function Treatments() {
   const [isTreatmentDialogOpen, setIsTreatmentDialogOpen] = useState(false);
@@ -80,7 +81,7 @@ export default function Treatments() {
     const fileData = new Blob([excelBuffer], { type: 'application/octet-stream' });
 
     // حفظ الملف
-    saveAs(fileData, `قائمة_العلاجات_${new Date().toLocaleDateString()}.xlsx`);
+    saveAs(fileData, `قائمة_العلاجات_${format(new Date(), 'dd-MM-yyyy')}.xlsx`);
 
     toast({
       title: "تم التصدير بنجاح",

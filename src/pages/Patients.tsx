@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { format } from "date-fns";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,7 +83,7 @@ export default function Patients() {
       // تحويل البيانات إلى تنسيق مناسب للإكسل
       const dataForExcel = allPatients.map((patient) => ({
         'الاسم': patient.full_name,
-        'تاريخ الميلاد': new Date(patient.date_of_birth).toLocaleDateString(),
+        'تاريخ الميلاد': format(new Date(patient.date_of_birth), 'dd/MM/yyyy'),
         'الهاتف': patient.phone_number,
         'العنوان': patient.address || '-',
         'المهنة': patient.job || '-',
@@ -112,7 +113,7 @@ export default function Patients() {
       const fileData = new Blob([excelBuffer], { type: 'application/octet-stream' });
       
       // حفظ الملف
-      saveAs(fileData, `قائمة_المرضى_${new Date().toLocaleDateString()}.xlsx`);
+      saveAs(fileData, `قائمة_المرضى_${format(new Date(), 'dd-MM-yyyy')}.xlsx`);
       
       toast({
         title: "تم التصدير بنجاح",
@@ -499,7 +500,7 @@ export default function Patients() {
                         onClick={() => viewPatientProfile(patient.id)}
                       >
                         <TableCell className="font-medium">{patient.full_name}</TableCell>
-                        <TableCell>{new Date(patient.date_of_birth).toLocaleDateString()}</TableCell>
+                        <TableCell>{format(new Date(patient.date_of_birth), 'dd/MM/yyyy')}</TableCell>
                         <TableCell>{patient.phone_number}</TableCell>
                         <TableCell>{patient.address || "-"}</TableCell>
                         <TableCell>{patient.job || "-"}</TableCell>
@@ -611,7 +612,7 @@ export default function Patients() {
                       <div className="grid grid-cols-1 gap-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">تاريخ الميلاد:</span>
-                          <span>{new Date(patient.date_of_birth).toLocaleDateString()}</span>
+                          <span>{format(new Date(patient.date_of_birth), 'dd/MM/yyyy')}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">الهاتف:</span>
