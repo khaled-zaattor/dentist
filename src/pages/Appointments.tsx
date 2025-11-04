@@ -22,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import { format } from "date-fns";
 
 export default function Appointments() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -778,7 +779,7 @@ export default function Appointments() {
     const appointmentsByDate: { [key: string]: any[] } = {};
     
     appointments.forEach(apt => {
-      const date = new Date(apt.scheduled_at).toLocaleDateString('ar-EG');
+      const date = format(new Date(apt.scheduled_at), 'dd/MM/yyyy');
       if (!appointmentsByDate[date]) {
         appointmentsByDate[date] = [];
       }
@@ -812,7 +813,7 @@ export default function Appointments() {
           row['التخصص'] = apt.doctors?.specialty || '';
         }
         if (selectedColumns.includes('date')) {
-          row['التاريخ'] = new Date(apt.scheduled_at).toLocaleDateString('ar-EG');
+          row['التاريخ'] = format(new Date(apt.scheduled_at), 'dd/MM/yyyy');
         }
         if (selectedColumns.includes('time')) {
           row['الوقت'] = new Date(apt.scheduled_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
@@ -990,7 +991,7 @@ export default function Appointments() {
     }
 
     const appointmentDate = new Date(appointment.scheduled_at);
-    const formattedDate = appointmentDate.toLocaleDateString('ar-SA');
+    const formattedDate = format(appointmentDate, 'dd/MM/yyyy');
     const formattedTime = appointmentDate.toLocaleTimeString('ar-SA', {
       hour: '2-digit',
       minute: '2-digit'
@@ -1563,12 +1564,11 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                           </RadioGroup>
                         </div>
 
-                  {teethType === "adult" ? (
+                   {teethType === "adult" ? (
                     <>
                       {/* أسنان البالغين */}
-                      <div className="mb-3">
-                        <div className="text-xs text-center text-muted-foreground mb-1">الفك العلوي</div>
-                        <div className="grid grid-cols-8 gap-1 mb-1">
+                      <div className="mb-2">
+                        <div className="flex gap-0.5 justify-center items-center">
                           {[18, 17, 16, 15, 14, 13, 12, 11].map((toothNum) => (
                             <button
                               key={toothNum}
@@ -1586,7 +1586,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                   setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
                                 }
                               }}
-                              className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-background hover:bg-muted border-border'
                                 }`}
@@ -1594,8 +1594,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                               {toothNum}
                             </button>
                           ))}
-                        </div>
-                        <div className="grid grid-cols-8 gap-1">
+                          <div className="w-px h-[25px] bg-border mx-0.5" />
                           {[21, 22, 23, 24, 25, 26, 27, 28].map((toothNum) => (
                             <button
                               key={toothNum}
@@ -1611,7 +1610,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                   setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
                                 }
                               }}
-                              className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-background hover:bg-muted border-border'
                                 }`}
@@ -1622,34 +1621,10 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                         </div>
                       </div>
 
+                      <div className="h-px bg-border my-2" />
+
                       <div>
-                        <div className="text-xs text-center text-muted-foreground mb-1">الفك السفلي</div>
-                        <div className="grid grid-cols-8 gap-1 mb-1">
-                          {[31, 32, 33, 34, 35, 36, 37, 38].map((toothNum) => (
-                            <button
-                              key={toothNum}
-                              type="button"
-                              onClick={() => {
-                                const toothStr = toothNum.toString();
-                                if (isSingleToothOnly) {
-                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: [toothStr] });
-                                } else {
-                                  const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
-                                    ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
-                                    : [...treatmentRecord.tooth_numbers, toothStr];
-                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
-                                }
-                              }}
-                              className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
-                                ? 'bg-primary text-primary-foreground border-primary'
-                                : 'bg-background hover:bg-muted border-border'
-                                }`}
-                            >
-                              {toothNum}
-                            </button>
-                          ))}
-                        </div>
-                        <div className="grid grid-cols-8 gap-1">
+                        <div className="flex gap-0.5 justify-center items-center">
                           {[48, 47, 46, 45, 44, 43, 42, 41].map((toothNum) => (
                             <button
                               key={toothNum}
@@ -1665,7 +1640,31 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                   setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
                                 }
                               }}
-                              className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-background hover:bg-muted border-border'
+                                }`}
+                            >
+                              {toothNum}
+                            </button>
+                          ))}
+                          <div className="w-px h-[25px] bg-border mx-0.5" />
+                          {[31, 32, 33, 34, 35, 36, 37, 38].map((toothNum) => (
+                            <button
+                              key={toothNum}
+                              type="button"
+                              onClick={() => {
+                                const toothStr = toothNum.toString();
+                                if (isSingleToothOnly) {
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: [toothStr] });
+                                } else {
+                                  const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
+                                    ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
+                                    : [...treatmentRecord.tooth_numbers, toothStr];
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                }
+                              }}
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-background hover:bg-muted border-border'
                                 }`}
@@ -1679,9 +1678,8 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                   ) : (
                     <>
                       {/* أسنان الأطفال */}
-                      <div className="mb-3">
-                        <div className="text-xs text-center text-muted-foreground mb-1">الفك العلوي</div>
-                        <div className="grid grid-cols-5 gap-1 mb-1 max-w-[200px] mx-auto">
+                      <div className="mb-2">
+                        <div className="flex gap-0.5 justify-center items-center">
                           {[55, 54, 53, 52, 51].map((toothNum) => (
                             <button
                               key={toothNum}
@@ -1697,7 +1695,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                   setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
                                 }
                               }}
-                              className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-background hover:bg-muted border-border'
                                 }`}
@@ -1705,8 +1703,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                               {toothNum}
                             </button>
                           ))}
-                        </div>
-                        <div className="grid grid-cols-5 gap-1 max-w-[200px] mx-auto">
+                          <div className="w-px h-[25px] bg-border mx-0.5" />
                           {[61, 62, 63, 64, 65].map((toothNum) => (
                             <button
                               key={toothNum}
@@ -1722,7 +1719,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                   setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
                                 }
                               }}
-                              className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-background hover:bg-muted border-border'
                                 }`}
@@ -1733,34 +1730,10 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                         </div>
                       </div>
 
+                      <div className="h-px bg-border my-2" />
+
                       <div>
-                        <div className="text-xs text-center text-muted-foreground mb-1">الفك السفلي</div>
-                        <div className="grid grid-cols-5 gap-1 mb-1 max-w-[200px] mx-auto">
-                          {[71, 72, 73, 74, 75].map((toothNum) => (
-                            <button
-                              key={toothNum}
-                              type="button"
-                              onClick={() => {
-                                const toothStr = toothNum.toString();
-                                if (isSingleToothOnly) {
-                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: [toothStr] });
-                                } else {
-                                  const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
-                                    ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
-                                    : [...treatmentRecord.tooth_numbers, toothStr];
-                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
-                                }
-                              }}
-                              className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
-                                ? 'bg-primary text-primary-foreground border-primary'
-                                : 'bg-background hover:bg-muted border-border'
-                                }`}
-                            >
-                              {toothNum}
-                            </button>
-                          ))}
-                        </div>
-                        <div className="grid grid-cols-5 gap-1 max-w-[200px] mx-auto">
+                        <div className="flex gap-0.5 justify-center items-center">
                           {[85, 84, 83, 82, 81].map((toothNum) => (
                             <button
                               key={toothNum}
@@ -1776,7 +1749,31 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
                                   setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
                                 }
                               }}
-                              className={`h-6 w-6 text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-background hover:bg-muted border-border'
+                                }`}
+                            >
+                              {toothNum}
+                            </button>
+                          ))}
+                          <div className="w-px h-[25px] bg-border mx-0.5" />
+                          {[71, 72, 73, 74, 75].map((toothNum) => (
+                            <button
+                              key={toothNum}
+                              type="button"
+                              onClick={() => {
+                                const toothStr = toothNum.toString();
+                                if (isSingleToothOnly) {
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: [toothStr] });
+                                } else {
+                                  const newTeeth = treatmentRecord.tooth_numbers.includes(toothStr)
+                                    ? treatmentRecord.tooth_numbers.filter(t => t !== toothStr)
+                                    : [...treatmentRecord.tooth_numbers, toothStr];
+                                  setTreatmentRecord({ ...treatmentRecord, tooth_numbers: newTeeth });
+                                }
+                              }}
+                              className={`h-[25px] w-[25px] text-xs font-medium border rounded transition-colors ${treatmentRecord.tooth_numbers.includes(toothNum.toString())
                                 ? 'bg-primary text-primary-foreground border-primary'
                                 : 'bg-background hover:bg-muted border-border'
                                 }`}
@@ -2209,7 +2206,7 @@ ${appointment.notes ? `📝 ملاحظات: ${appointment.notes}` : ''}
               <div className="grid grid-cols-2 gap-3 text-sm p-3 bg-muted/50 rounded-lg">
                 <div><span className="font-medium">المريض:</span> {selectedAppointment.patients?.full_name}</div>
                 <div><span className="font-medium">الطبيب:</span> {selectedAppointment.doctors?.full_name}</div>
-                <div><span className="font-medium">التاريخ:</span> {new Date(selectedAppointment.scheduled_at).toLocaleDateString('ar')}</div>
+                <div><span className="font-medium">التاريخ:</span> {format(new Date(selectedAppointment.scheduled_at), 'dd/MM/yyyy')}</div>
                 <div><span className="font-medium">الوقت:</span> {new Date(selectedAppointment.scheduled_at).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}</div>
                 <div className="col-span-2">
                   <span className="font-medium">الحالة:</span>{" "}

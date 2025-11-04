@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
+import { format } from "date-fns";
 
 export function SystemStatistics() {
   const currentDate = new Date();
@@ -74,7 +75,7 @@ export function SystemStatistics() {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const value = `${year}-${month}`;
-    const label = date.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long' });
+    const label = format(date, 'MM/yyyy');
     return { value, label };
   });
 
