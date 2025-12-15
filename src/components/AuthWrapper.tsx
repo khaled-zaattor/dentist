@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
+import { authService, LoginCredentials, RegisterData } from "@/lib/api/services/auth.service";
+import { User } from "@/lib/api/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,22 +17,14 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    // Check for existing session
+    const currentUser = authService.getCurrentUser();
+    setUser(currentUser);
+    setLoading(false);
   }, []);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -41,30 +33,32 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const registerData: RegisterData = {
           email,
           password,
-        });
-        if (error) throw error;
+          password_confirmation: password,
+          full_name: fullName,
+        };
+        const response = await authService.register(registerData);
+        setUser(response.user);
         toast({
           title: "تم إنشاء الحساب",
-          description: "تحقق من بريدك الإلكتروني لتأكيد الحساب",
+          description: "مرحباً بك في نظام إدارة العيادة",
         });
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
+        const credentials: LoginCredentials = { email, password };
+        const response = await authService.login(credentials);
+        setUser(response.user);
         toast({
           title: "تم تسجيل الدخول",
           description: "مرحباً بك في نظام إدارة العيادة",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "حدث خطأ غير متوقع";
       toast({
         title: "خطأ",
-        description: error instanceof Error ? error.message : "حدث خطأ غير متوقع",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -73,11 +67,20 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "تم تسجيل الخروج",
-      description: "تم تسجيل خروجك بنجاح",
-    });
+    try {
+      await authService.logout();
+      setUser(null);
+      toast({
+        title: "تم تسجيل الخروج",
+        description: "تم تسجيل خروجك بنجاح",
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تسجيل الخروج",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -108,6 +111,19 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAuth} className="space-y-4">
+              {isSignUp && (
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">الاسم الكامل</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    placeholder="أحمد محمد"
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">البريد الإلكتروني</Label>
                 <Input
@@ -128,6 +144,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="••••••••"
+                  minLength={6}
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
@@ -158,7 +175,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
             <div className="flex items-center gap-2 text-green-700">
               <Shield className="h-4 w-4" />
               <span className="text-sm font-medium">
-                {user?.email?.replace(/@gmail\.com$/, '') || user?.email || 'مستخدم'}
+                {user.full_name || user.email}
               </span>
               <Button 
                 variant="ghost" 

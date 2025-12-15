@@ -5,10 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus, Edit, Eye, Trash2, UserCheck } from "lucide-react";
+import { Search, Plus, Edit, Eye, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { doctorService } from "@/lib/api/services";
+import { Doctor } from "@/lib/api/types";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import {
@@ -22,16 +22,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-interface Doctor {
-  id: string;
-  full_name: string;
-  email: string;
-  phone_number: string;
-  specialty: string;
-  created_at: string;
-  updated_at: string;
-}
 
 export default function Doctors() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,26 +39,25 @@ export default function Doctors() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const { data: doctors, isLoading } = useQuery({
+  const { data: doctorsResponse, isLoading } = useQuery({
     queryKey: ["doctors", searchTerm],
     queryFn: async () => {
-      let query = supabase.from("doctors").select("*");
-      
-      if (searchTerm) {
-        query = query.or(`full_name.ilike.%${searchTerm}%,specialty.ilike.%${searchTerm}%`);
-      }
-      
-      const { data, error } = await query.order("full_name");
-      if (error) throw error;
-      return data as Doctor[];
+      return await doctorService.getAll({ per_page: 100 });
     },
   });
 
+  const doctors = doctorsResponse?.data || [];
+  const filteredDoctors = searchTerm
+    ? doctors.filter(
+        (doctor) =>
+          doctor.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          doctor.specialty.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : doctors;
+
   const createDoctorMutation = useMutation({
     mutationFn: async (doctor: typeof newDoctor) => {
-      const { data, error } = await supabase.from("doctors").insert([doctor]).select();
-      if (error) throw error;
-      return data;
+      return await doctorService.create(doctor);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["doctors"] });
@@ -84,10 +73,10 @@ export default function Doctors() {
         description: "تم إضافة الدكتور بنجاح",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "خطأ",
-        description: "فشل في إضافة الدكتور",
+        description: error.response?.data?.message || "فشل في إضافة الدكتور",
         variant: "destructive",
       });
     },
@@ -95,18 +84,7 @@ export default function Doctors() {
 
   const updateDoctorMutation = useMutation({
     mutationFn: async (doctor: Doctor) => {
-      const { data, error } = await supabase
-        .from("doctors")
-        .update({
-          full_name: doctor.full_name,
-          email: doctor.email,
-          phone_number: doctor.phone_number,
-          specialty: doctor.specialty,
-        })
-        .eq("id", doctor.id)
-        .select();
-      if (error) throw error;
-      return data;
+      return await doctorService.update(doctor.id, doctor);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["doctors"] });
@@ -117,10 +95,10 @@ export default function Doctors() {
         description: "تم تحديث بيانات الدكتور بنجاح",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "خطأ",
-        description: "فشل في تحديث بيانات الدكتور",
+        description: error.response?.data?.message || "فشل في تحديث بيانات الدكتور",
         variant: "destructive",
       });
     },
@@ -128,8 +106,7 @@ export default function Doctors() {
 
   const deleteDoctorMutation = useMutation({
     mutationFn: async (doctorId: string) => {
-      const { error } = await supabase.from("doctors").delete().eq("id", doctorId);
-      if (error) throw error;
+      return await doctorService.delete(doctorId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["doctors"] });
@@ -138,10 +115,10 @@ export default function Doctors() {
         description: "تم حذف الدكتور بنجاح",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "خطأ",
-        description: "فشل في حذف الدكتور",
+        description: error.response?.data?.message || "فشل في حذف الدكتور",
         variant: "destructive",
       });
     },
@@ -268,7 +245,7 @@ export default function Doctors() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {doctors?.map((doctor) => (
+                    {filteredDoctors?.map((doctor) => (
                       <TableRow key={doctor.id}>
                         <TableCell className="font-medium">{doctor.full_name}</TableCell>
                         <TableCell>{doctor.email}</TableCell>
@@ -327,7 +304,7 @@ export default function Doctors() {
 
               {/* Mobile Cards */}
               <div className="md:hidden space-y-4">
-                {doctors?.map((doctor) => (
+                {filteredDoctors?.map((doctor) => (
                   <Card key={doctor.id} className="p-4">
                     <div className="space-y-3">
                       <div className="flex justify-between items-start">

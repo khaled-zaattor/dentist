@@ -30,8 +30,10 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/patients" element={<Layout><Patients /></Layout>} />
+            <Route path="/patients/:patientId" element={<Layout><PatientProfile /></Layout>} />
             <Route path="/patient-profile/:patientId" element={<Layout><PatientProfile /></Layout>} />
             <Route path="/doctors" element={<Layout><Doctors /></Layout>} />
+            <Route path="/doctors/:doctorId" element={<Layout><DoctorProfile /></Layout>} />
             <Route path="/doctor-profile/:doctorId" element={<Layout><DoctorProfile /></Layout>} />
             <Route path="/appointments" element={<Layout><Appointments /></Layout>} />
             <Route path="/treatments" element={<Layout><Treatments /></Layout>} />
