@@ -15,7 +15,7 @@ export const Layout = ({ children }: LayoutProps) => {
   const isMobile = useIsMobile();
 
   const navItems = [
-    { path: "/", label: "لوحة التحكم", icon: Stethoscope },
+    { path: "/admin", label: "لوحة التحكم", icon: Stethoscope },
     { path: "/patients", label: "المرضى", icon: Users },
     { path: "/appointments", label: "المواعيد", icon: Calendar },
     { path: "/treatments", label: "العلاجات", icon: FileText },
